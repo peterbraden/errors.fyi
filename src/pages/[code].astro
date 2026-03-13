@@ -4,7 +4,10 @@ import { getAllCodePaths, getEntriesForCode, getEntriesForNumeric } from '../lib
 
 export async function getStaticPaths() {
   const paths = await getAllCodePaths();
-  return paths.map(({ code, isAlias }) => ({ params: { code }, props: { isAlias } }));
+  // '404' is handled by src/pages/404.astro (doubles as the GH Pages 404 handler).
+  return paths
+    .filter(({ code }) => code !== '404')
+    .map(({ code, isAlias }) => ({ params: { code }, props: { isAlias } }));
 }
 
 const { code } = Astro.params;
