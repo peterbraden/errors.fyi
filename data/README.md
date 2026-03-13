@@ -1,49 +1,67 @@
 # Data
 
-Each file in this directory represents a namespace of error codes.
-The filename should match the `namespace` field and use only lowercase letters, digits, and hyphens.
+Error codes are organised into namespaces. Each namespace is a directory
+under `data/`, containing a `_index.md` for namespace metadata and one `.md`
+file per code.
 
-## Schema
+```
+data/
+  http/
+    _index.md      ← namespace metadata
+    404.md         ← one file per code
+    ...
+  posix/
+    _index.md
+    ENOENT.md
+    ...
+```
 
-```jsonc
-{
-  // Unique identifier for this namespace. Must match the filename (without .json).
-  "namespace": "http",
+The filename (without `.md`) is the canonical code string and becomes the URL:
+`data/http/404.md` → `errors.fyi/404`.
 
-  // Human-readable name shown in the UI.
-  "title": "HTTP Status Codes",
+If two namespaces define the same code (e.g. `http/416.md` and
+`someother/416.md`), both appear on the same page at `errors.fyi/416`.
 
-  // One or two sentences describing the namespace.
-  "description": "Status codes returned by HTTP servers.",
+## _index.md schema
 
-  // Optional. Canonical specifications or index pages for this namespace.
-  "references": [
-    "https://www.rfc-editor.org/rfc/rfc9110"
-  ],
+```yaml
+---
+title: HTTP Status Codes
+description: "One or two sentences describing the namespace."
+references:
+  - https://www.rfc-editor.org/rfc/rfc9110   # optional
+---
+```
 
-  "codes": [
-    {
-      // The error code as a string. Numeric or symbolic (e.g. "404", "ENOENT").
-      "code": "404",
+## Code file schema
 
-      // Short canonical name.
-      "name": "Not Found",
+```yaml
+---
+name: Not Found
+description: "The server cannot find the requested resource."
+references:
+  - https://www.rfc-editor.org/rfc/rfc9110#section-15.5.5  # optional
+---
+```
 
-      // One to three sentences. Plain prose; no markdown.
-      "description": "The server cannot find the requested resource.",
+For symbolic codes that have a numeric equivalent (e.g. POSIX `ENOENT = 2`),
+add a `numeric` field. This generates an alias page at `errors.fyi/2` that
+links back to the canonical `errors.fyi/ENOENT`:
 
-      // Optional. Direct links to the specification section for this code.
-      "references": [
-        "https://www.rfc-editor.org/rfc/rfc9110#section-15.5.5"
-      ]
-    }
-  ]
-}
+```yaml
+---
+name: No such file or directory
+numeric: 2
+description: "A component of the specified pathname does not exist."
+references:
+  - https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html
+---
 ```
 
 ## Contributing
 
 1. Fork the repository.
-2. Add or edit a JSON file in this directory.
-3. Validate your JSON is well-formed before opening a pull request.
-4. Open a pull request against `main`; CI will build and deploy on merge.
+2. Add or edit a `.md` file in the appropriate `data/<namespace>/` directory.
+   Create a new namespace directory (with a `_index.md`) if needed.
+3. Ensure your JSON frontmatter is valid YAML and the file is well-formed.
+4. Open a pull request against `main`; CI builds and deploys on merge.

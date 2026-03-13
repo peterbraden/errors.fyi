@@ -1,0 +1,232 @@
+---
+import Base from '../layouts/Base.astro';
+import { getAllCodePaths, getEntriesForCode, getEntriesForNumeric } from '../lib/data';
+
+export async function getStaticPaths() {
+  const paths = await getAllCodePaths();
+  return paths.map(({ code, isAlias }) => ({ params: { code }, props: { isAlias } }));
+}
+
+const { code } = Astro.params;
+const { isAlias } = Astro.props;
+
+const entries = isAlias
+  ? await getEntriesForNumeric(parseInt(code, 10))
+  : await getEntriesForCode(code);
+
+const title = isAlias ? `${code} (numeric alias)` : `${code}`;
+const description = isAlias
+  ? `The numeric value ${code} refers to other error codes.`
+  : entries.map((e) => e.description).join(' ');
+---
+
+<Base title={title} description={description}>
+  <nav class="breadcrumb">
+    <a href="/">errors.fyi</a>
+    <span>/</span>
+    <span>{code}</span>
+  </nav>
+
+  <div class="code-badge">{code}</div>
+
+  {isAlias ? (
+    <>
+      <h1>Numeric alias</h1>
+      <p class="alias-note">
+        The numeric value <code>{code}</code> does not have its own canonical page.
+        It refers to the following:
+      </p>
+      <ul class="alias-list">
+        {entries.map((e) => (
+          <li>
+            <a href={`/${e.code}/`}>
+              <span class="alias-code">{e.code}</span>
+              <span class="alias-name">{e.name}</span>
+              <span class="alias-ns">{e.namespace}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </>
+  ) : (
+    <>
+      {entries.length === 1 ? (
+        <h1>{entries[0].name}</h1>
+      ) : (
+        <h1>{code}</h1>
+      )}
+
+      <div class="entries">
+        {entries.map((entry) => (
+          <section class="entry">
+            {entries.length > 1 && (
+              <div class="entry-ns">{entry.namespace}</div>
+            )}
+            {entries.length > 1 && (
+              <h2 class="entry-name">{entry.name}</h2>
+            )}
+            <p class="entry-desc">{entry.description}</p>
+            {entry.numeric !== undefined && (
+              <p class="entry-numeric">
+                Numeric value: <a href={`/${entry.numeric}/`}><code>{entry.numeric}</code></a>
+              </p>
+            )}
+            {entry.references && entry.references.length > 0 && (
+              <div class="entry-refs">
+                <h3>References</h3>
+                <ul>
+                  {entry.references.map((ref) => (
+                    <li><a href={ref} target="_blank" rel="noopener">{ref}</a></li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        ))}
+      </div>
+    </>
+  )}
+
+  <div class="back">
+    <a href="/">← all namespaces</a>
+  </div>
+</Base>
+
+<style>
+  .breadcrumb {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .code-badge {
+    font-family: var(--mono);
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.03em;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem;
+  }
+
+  /* Alias page */
+  .alias-note {
+    color: var(--muted);
+    margin: 0 0 1rem;
+  }
+
+  .alias-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .alias-list li {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+
+  .alias-list a {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .alias-list a:hover { text-decoration: none; background: var(--border); border-radius: 4px; }
+
+  .alias-code {
+    font-family: var(--mono);
+    color: var(--accent);
+    font-size: 0.95rem;
+    min-width: 5rem;
+  }
+
+  .alias-name { font-weight: 500; }
+
+  .alias-ns {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  /* Entry sections (when multiple namespaces share a code) */
+  .entries {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .entry {
+    border-left: 2px solid var(--accent);
+    padding-left: 1.25rem;
+  }
+
+  .entry-ns {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.25rem;
+  }
+
+  .entry-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem;
+  }
+
+  .entry-desc {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    max-width: 640px;
+    margin: 0 0 0.75rem;
+  }
+
+  .entry-numeric {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+  }
+
+  .entry-refs h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0 0 0.4rem;
+  }
+
+  .entry-refs ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .entry-refs li {
+    font-size: 0.875rem;
+    word-break: break-all;
+  }
+
+  .back {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.875rem;
+  }
+</style>

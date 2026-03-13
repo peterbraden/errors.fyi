@@ -1,79 +1,131 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getNamespaces } from '../lib/data';
+import { getNamespaces, getAllCodes } from '../lib/data';
 
 const namespaces = await getNamespaces();
+const allCodes = await getAllCodes();
+
+// Group codes by namespace for the browse section
+const byNamespace = namespaces.map((ns) => ({
+  ...ns,
+  codes: allCodes.filter((c) => c.namespace === ns.namespace),
+}));
 ---
 
-<Base title="Error Codes">
-  <h1>Error Code Reference</h1>
-  <p>
-    A community-maintained directory of error codes. Browse by namespace below,
-    or <a href="https://github.com/bradenp1/errorcodes" target="_blank" rel="noopener">contribute via pull request</a>.
+<Base title="Error Code Reference">
+  <h1>errors.fyi</h1>
+  <p class="tagline">
+    A community directory of error codes. Each code has a canonical page — contribute via
+    <a href="https://github.com/bradenp1/errorcodes" target="_blank" rel="noopener">pull request</a>.
   </p>
 
-  <ul class="namespace-list">
-    {namespaces.map((ns) => (
-      <li>
-        <a href={`/${ns.namespace}/`}>
-          <span class="ns-title">{ns.title}</span>
-          <span class="ns-count">{ns.codes.length} codes</span>
-        </a>
-        <p class="ns-desc">{ns.description}</p>
-      </li>
-    ))}
-  </ul>
+  {byNamespace.map((ns) => (
+    <section class="ns-section">
+      <div class="ns-header">
+        <h2>{ns.title}</h2>
+        <span class="ns-count">{ns.codes.length} codes</span>
+      </div>
+      <p class="ns-desc">{ns.description}</p>
+
+      <ul class="code-grid">
+        {ns.codes.map((c) => (
+          <li>
+            <a href={`/${c.code}/`}>
+              <code>{c.code}</code>
+              <span>{c.name}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
 </Base>
 
 <style>
   h1 {
+    font-family: var(--mono);
     font-size: 2rem;
     font-weight: 700;
+    color: var(--accent);
     margin: 0 0 0.5rem;
+    letter-spacing: -0.03em;
   }
 
-  p { color: var(--muted); margin: 0 0 2.5rem; }
+  .tagline {
+    color: var(--muted);
+    margin: 0 0 3rem;
+  }
 
-  .namespace-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  .ns-section {
+    margin-bottom: 3rem;
+  }
+
+  .ns-header {
     display: flex;
-    flex-direction: column;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+
+  h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .ns-count {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .ns-desc {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin: 0 0 1rem;
+  }
+
+  .code-grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1px;
     border: 1px solid var(--border);
     border-radius: 6px;
     overflow: hidden;
   }
 
-  .namespace-list li {
+  .code-grid li {
     background: var(--surface);
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--border);
   }
 
-  .namespace-list li:last-child { border-bottom: none; }
-
-  .namespace-list a {
+  .code-grid a {
     display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-    font-size: 1.05rem;
-    font-weight: 600;
+    flex-direction: column;
+    padding: 0.6rem 0.85rem;
+    height: 100%;
   }
 
-  .namespace-list a:hover { text-decoration: none; }
-  .namespace-list a:hover .ns-title { text-decoration: underline; }
+  .code-grid a:hover {
+    background: var(--border);
+    text-decoration: none;
+  }
 
-  .ns-count {
+  .code-grid a:hover span {
+    text-decoration: underline;
+  }
+
+  .code-grid code {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    color: var(--accent);
+    display: block;
+  }
+
+  .code-grid span {
     font-size: 0.8rem;
     color: var(--muted);
-    font-weight: 400;
-  }
-
-  .ns-desc {
-    margin: 0.25rem 0 0;
-    font-size: 0.875rem;
-    color: var(--muted);
+    margin-top: 0.1rem;
   }
 </style>
