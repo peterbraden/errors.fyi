@@ -60,3 +60,30 @@ astro.config.mjs              ← site: https://errors.fyi, output: static
   will serve the HTTP 404 entry as the site's own 404 error page.
 - `npm audit` reports 3 vulnerabilities in the Astro dependency tree; none
   affect the static build output.
+
+## Future: CLI (`errors.fyi explain 404`)
+
+Goal: a CLI that mirrors the website, installable via npm or a standalone binary.
+
+```
+$ errors.fyi explain 404
+404 — Not Found (HTTP)
+The server cannot find the requested resource. The URL may be wrong,
+or the resource may not exist.
+RFC 9110 §15.5.5
+```
+
+Key architectural consideration: the CLI must not bundle a data snapshot that
+goes stale. The cleanest approach is to have the Astro build emit a static JSON
+index (e.g. `public/data/codes.json`) alongside the HTML, which the CLI fetches
+at runtime. This means:
+
+- No separate API infrastructure — data is served from the same GitHub Pages
+  deployment and is always current.
+- The CLI is thin: fetch, filter, format. No local data management.
+- The build pipeline becomes the single source of truth for both the site and
+  the CLI.
+
+The invocation `errors.fyi` (with a dot) is unusual as a shell command but is
+valid. Worth verifying npm package name availability and checking whether a
+simpler alias (e.g. `errs`) is preferable for ergonomics.
