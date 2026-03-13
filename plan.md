@@ -53,11 +53,15 @@ astro.config.mjs              ← site: https://errors.fyi, output: static
 
 ## Known / Next
 
-- POSIX error codes (`errno`) would be a natural next namespace to add.
-  The `numeric` alias mechanism is already implemented for symbolic codes.
+- POSIX error codes added (77 codes). Numeric values are `numeric` field where
+  consistent across Linux/macOS; platform-variable codes note both values in
+  the description instead.
 - No search yet — Pagefind is a good fit once content grows.
-- Astro renders `/404.html` and `/500.html` as flat files; GitHub Pages
-  will serve the HTTP 404 entry as the site's own 404 error page.
+- `src/pages/404.astro` is the GH Pages 404 handler. It uses
+  `window.location.pathname` to show either the HTTP 404 entry (if the
+  URL is exactly `/404`) or an unknown-code prompt with contribution
+  instructions. The "404" code is excluded from `[code].astro` to avoid
+  a static/dynamic route conflict.
 - `npm audit` reports 3 vulnerabilities in the Astro dependency tree; none
   affect the static build output.
 
