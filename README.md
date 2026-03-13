@@ -1,0 +1,77 @@
+# errors.fyi
+
+A community-maintained directory of error codes, published at [errors.fyi](https://errors.fyi).
+
+Each error code has a canonical page — `errors.fyi/404`, `errors.fyi/ENOENT` — that consolidates
+every namespace defining that code in one place. The site is statically generated from this
+repository; merging a pull request to `main` triggers an automatic rebuild and deploy.
+
+## Contributing
+
+Adding or correcting an error code requires only a single Markdown file. No code changes are needed.
+
+**Adding a code to an existing namespace** (e.g. HTTP):
+
+Create `data/http/<code>.md` with the following frontmatter:
+
+```yaml
+---
+name: Not Found
+description: "The server cannot find the requested resource."
+references:
+  - https://www.rfc-editor.org/rfc/rfc9110#section-15.5.5
+---
+```
+
+The filename (without `.md`) becomes the code and its URL. Keep descriptions to one or two plain
+prose sentences.
+
+**Adding a new namespace:**
+
+Create a directory under `data/` and add a `_index.md` for namespace metadata:
+
+```yaml
+---
+title: POSIX Error Codes
+description: "Error codes defined by the POSIX standard, accessible via errno."
+references:
+  - https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html
+---
+```
+
+Then add individual code files as above. See `data/README.md` for the full schema, including the
+`numeric` field for symbolic codes such as `ENOENT`.
+
+## Running locally
+
+```
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+
+# Build the static site
+npm run build
+```
+
+## Structure
+
+```
+data/
+  <namespace>/
+    _index.md     namespace metadata
+    <code>.md     one file per code
+src/
+  lib/data.ts     reads data/ at build time
+  pages/
+    index.astro   homepage
+    [code].astro  per-code page
+.github/
+  workflows/
+    deploy.yml    builds and deploys to GitHub Pages on push to main
+```
+
+## Licence
+
+Data contributed to this repository is released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
