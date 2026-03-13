@@ -1,0 +1,104 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'A community directory of error codes.' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} — errors.fyi</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; }
+
+      :root {
+        --bg: #0f0f0f;
+        --surface: #1a1a1a;
+        --border: #2a2a2a;
+        --text: #e0e0e0;
+        --muted: #888;
+        --accent: #e05a4e;
+        --link: #7cb8e8;
+        --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+
+      a { color: var(--link); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+
+      header {
+        border-bottom: 1px solid var(--border);
+        padding: 1rem 0;
+      }
+
+      header .inner {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+      }
+
+      header a.home {
+        font-family: var(--mono);
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent);
+        letter-spacing: -0.02em;
+      }
+
+      header .tagline {
+        color: var(--muted);
+        font-size: 0.875rem;
+      }
+
+      main {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem;
+      }
+
+      footer {
+        border-top: 1px solid var(--border);
+        padding: 1.5rem 0;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+
+      footer a { color: var(--muted); }
+      footer a:hover { color: var(--text); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="inner">
+        <a href="/" class="home">errors.fyi</a>
+        <span class="tagline">community error code reference</span>
+      </div>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer>
+      <a href="https://github.com/bradenp1/errorcodes" target="_blank" rel="noopener">contribute on GitHub</a>
+    </footer>
+  </body>
+</html>

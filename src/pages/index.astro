@@ -1,0 +1,79 @@
+---
+import Base from '../layouts/Base.astro';
+import { getNamespaces } from '../lib/data';
+
+const namespaces = await getNamespaces();
+---
+
+<Base title="Error Codes">
+  <h1>Error Code Reference</h1>
+  <p>
+    A community-maintained directory of error codes. Browse by namespace below,
+    or <a href="https://github.com/bradenp1/errorcodes" target="_blank" rel="noopener">contribute via pull request</a>.
+  </p>
+
+  <ul class="namespace-list">
+    {namespaces.map((ns) => (
+      <li>
+        <a href={`/${ns.namespace}/`}>
+          <span class="ns-title">{ns.title}</span>
+          <span class="ns-count">{ns.codes.length} codes</span>
+        </a>
+        <p class="ns-desc">{ns.description}</p>
+      </li>
+    ))}
+  </ul>
+</Base>
+
+<style>
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+  }
+
+  p { color: var(--muted); margin: 0 0 2.5rem; }
+
+  .namespace-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .namespace-list li {
+    background: var(--surface);
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .namespace-list li:last-child { border-bottom: none; }
+
+  .namespace-list a {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  .namespace-list a:hover { text-decoration: none; }
+  .namespace-list a:hover .ns-title { text-decoration: underline; }
+
+  .ns-count {
+    font-size: 0.8rem;
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .ns-desc {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+</style>
