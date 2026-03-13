@@ -75,3 +75,11 @@ src/
 ## Licence
 
 Data contributed to this repository is released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+
+## Note about this project.
+
+This was created entirely as a vibe coded experiment to test the capabilities of
+LLM's by @peterbraden. I wanted to see if I could deploy a website without
+writing a single line of code (this comment is all I edited) before my train
+arrived. I hope it's useful.
+
