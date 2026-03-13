@@ -19,6 +19,28 @@ const byNamespace = namespaces.map((ns) => ({
     <a href="https://github.com/bradenp1/errorcodes" target="_blank" rel="noopener">pull request</a>.
   </p>
 
+  <form class="search" id="search">
+    <input
+      type="text"
+      name="code"
+      placeholder="404, ENOENT, …"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+      aria-label="Error code"
+    />
+    <button type="submit">Look up</button>
+  </form>
+
+  <script>
+    document.getElementById('search')!.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const code = (e.target as HTMLFormElement).code.value.trim();
+      if (code) window.location.href = `/${code}/`;
+    });
+  </script>
+
   {byNamespace.map((ns) => (
     <section class="ns-section">
       <div class="ns-header">
@@ -53,7 +75,44 @@ const byNamespace = namespaces.map((ns) => ({
 
   .tagline {
     color: var(--muted);
-    margin: 0 0 3rem;
+    margin: 0 0 1.5rem;
+  }
+
+  .search {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .search input {
+    flex: 1;
+    max-width: 320px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    font-family: var(--mono);
+    font-size: 1rem;
+    color: var(--text);
+    outline: none;
+  }
+
+  .search input:focus {
+    border-color: var(--accent);
+  }
+
+  .search button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .search button:hover {
+    opacity: 0.85;
   }
 
   .ns-section {
