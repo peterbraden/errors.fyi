@@ -42,6 +42,30 @@ references:
 Then add individual code files as above. See `data/README.md` for the full schema, including the
 `numeric` field for symbolic codes such as `ENOENT`.
 
+## CLI
+
+All codes are available as a machine-readable JSON export at
+`https://errors.fyi/data/codes.json`. The `errorfyi` CLI fetches this at
+runtime — no local data snapshot, always reflects the latest deployment.
+
+```
+# Install
+npm install -g errors.fyi
+
+# Look up a code across all namespaces
+errorfyi ENOENT
+errorfyi 11000
+errorfyi 404
+
+# Filter to one namespace
+errorfyi 23505 -n postgresql
+
+# Raw JSON output
+errorfyi ECONNREFUSED --json
+```
+
+Requires Node 18 or later.
+
 ## Running locally
 
 ```
@@ -51,7 +75,7 @@ npm install
 # Start the development server
 npm run dev
 
-# Build the static site
+# Build the static site (also emits dist/data/codes.json)
 npm run build
 ```
 
@@ -60,16 +84,21 @@ npm run build
 ```
 data/
   <namespace>/
-    _index.md     namespace metadata
-    <code>.md     one file per code
+    _index.md           namespace metadata
+    <code>.md           one file per code
 src/
-  lib/data.ts     reads data/ at build time
+  lib/data.ts           reads data/ at build time
   pages/
-    index.astro   homepage
-    [code].astro  per-code page
+    index.astro         homepage
+    [code].astro        per-code page
+    data/codes.json.ts  static JSON export
+cli/
+  package.json          npm package (errors.fyi, binary errorfyi)
+  bin/errorfyi.js       CLI entry point
 .github/
   workflows/
-    deploy.yml    builds and deploys to GitHub Pages on push to main
+    deploy.yml          builds and deploys to GitHub Pages on push to master
+    publish-cli.yml     publishes cli/ to npm on version tags (v*)
 ```
 
 ## Licence
