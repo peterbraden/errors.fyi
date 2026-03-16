@@ -10,30 +10,35 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write  # to push the version bump commit
       id-token: write  # required for OIDC trusted publishing
     defaults:
       run:
         working-directory: cli
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Check if version is already published
-        id: version-check
+      - name: Configure git
         run: |
-          PKG_VERSION=$(node -p "require('./package.json').version")
-          if npm view "errors-fyi@${PKG_VERSION}" version 2>/dev/null | grep -q "${PKG_VERSION}"; then
-            echo "Version ${PKG_VERSION} already published — skipping."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump patch version
+        run: npm version patch --no-git-tag-version
+
+      - name: Commit and push version bump
+        run: |
+          git add package.json
+          git commit -m "chore: bump cli to $(node -p "require('./package.json').version")"
+          git push
 
       - name: Publish
-        if: steps.version-check.outputs.skip == 'false'
         run: npm publish --provenance --access public
