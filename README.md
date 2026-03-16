@@ -50,7 +50,7 @@ runtime — no local data snapshot, always reflects the latest deployment.
 
 ```
 # Install
-npm install -g errors.fyi
+npm install -g errors-fyi
 
 # Look up a code across all namespaces
 errorfyi ENOENT
