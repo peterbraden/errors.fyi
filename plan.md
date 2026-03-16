@@ -79,8 +79,6 @@ astro.config.mjs      ← site: https://errors.fyi, output: static
 - [x] Namespace pill on code pages: single-entry pages show a linked namespace
       tag next to the code badge; multi-entry namespace labels are also linked.
 - Make a canonical error page, ie `/http/404` and link from the 404 page.
-- Investigate cookieless analytics - we want basic info like page views, but no
-  privacy impact.
 
 ## Known / Next
 
@@ -109,3 +107,8 @@ astro.config.mjs      ← site: https://errors.fyi, output: static
   sufficient workaround for now.
 - **Per-namespace browse pages:** listing all codes within a namespace.
 - **Standalone binary:** pkg or similar for users who prefer not to install Node.
+- **Analytics:** goal is basic "is anyone there?" signal. Cookieless pixels (e.g.
+  GoatCounter) still transmit IP to a third party, requiring a privacy policy under
+  GDPR. Server-side logs are unavailable on GitHub Pages. For now, the GitHub repo
+  traffic tab (Settings → Insights → Traffic) provides daily unique visitors and
+  views for the repo. Revisit if the site grows and a privacy policy becomes acceptable.
