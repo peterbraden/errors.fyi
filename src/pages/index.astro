@@ -1,112 +1,116 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getNamespaces, getAllCodes } from '../lib/data';
+import { getNamespaces, getAllCodes, getSample } from '../lib/data';
 
 const namespaces = await getNamespaces();
 const allCodes = await getAllCodes();
 
-// Group codes by namespace for the browse section
-const byNamespace = namespaces.map((ns) => ({
-  ...ns,
-  codes: allCodes.filter((c) => c.namespace === ns.namespace),
-}));
+const namespaceCounts = new Map(
+  namespaces.map((ns) => [
+    ns.namespace,
+    allCodes.filter((c) => c.namespace === ns.namespace).length,
+  ])
+);
+
+const highlights = getSample(allCodes, 24);
 ---
 
 <Base title="Error Code Reference">
-  <h1>errors.fyi</h1>
-  <p class="tagline">
-    A community directory of error codes. Each code has a canonical page — contribute via
-    <a href="https://github.com/peterbraden/errors.fyi" target="_blank" rel="noopener">pull request</a>.
-  </p>
+  <section class="hero">
+    <h1>errors.fyi</h1>
+    <p class="tagline">
+      A community directory of error codes. Each code has a canonical page — contribute via
+      <a href="https://github.com/peterbraden/errors.fyi" target="_blank" rel="noopener">pull request</a>.
+    </p>
 
-  <pre class="cli-hint">npm install -g errors-fyi &amp;&amp; errorfyi ENOENT</pre>
+    <form class="search" id="search">
+      <input
+        type="text"
+        name="code"
+        placeholder="404, ENOENT, …"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        aria-label="Error code"
+      />
+      <button type="submit">Look up</button>
+    </form>
 
-  <form class="search" id="search">
-    <input
-      type="text"
-      name="code"
-      placeholder="404, ENOENT, …"
-      autocomplete="off"
-      autocorrect="off"
-      autocapitalize="off"
-      spellcheck="false"
-      aria-label="Error code"
-    />
-    <button type="submit">Look up</button>
-  </form>
+    <script>
+      document.getElementById('search')!.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const code = (e.target as HTMLFormElement).code.value.trim();
+        if (code) window.location.href = `/${code}/`;
+      });
+    </script>
+  </section>
 
-  <script>
-    document.getElementById('search')!.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const code = (e.target as HTMLFormElement).code.value.trim();
-      if (code) window.location.href = `/${code}/`;
-    });
-  </script>
+  <section class="highlights">
+    <h2 class="section-heading">From the directory</h2>
+    <ul class="code-grid">
+      {highlights.map((c) => (
+        <li>
+          <a href={`/${c.code}/`}>
+            <code>{c.code}</code>
+            <span>{c.name}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
 
-  {byNamespace.map((ns) => (
-    <section class="ns-section">
-      <div class="ns-header">
-        <h2><a href={`/ns/${ns.namespace}/`}>{ns.title}</a></h2>
-        <span class="ns-count">{ns.codes.length} codes</span>
-      </div>
-      <p class="ns-desc">{ns.description}</p>
-
-      <ul class="code-grid">
-        {ns.codes.map((c) => (
-          <li>
-            <a href={`/${c.code}/`}>
-              <code>{c.code}</code>
-              <span>{c.name}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  ))}
+  <section class="namespaces">
+    <h2 class="section-heading">Namespaces</h2>
+    <ul class="ns-grid">
+      {namespaces.map((ns) => (
+        <li>
+          <a href={`/ns/${ns.namespace}/`}>
+            <span class="ns-title">{ns.title}</span>
+            <span class="ns-count">{namespaceCounts.get(ns.namespace)} codes</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
 </Base>
 
 <style>
+  .hero {
+    padding: 2rem 0 3rem;
+    text-align: center;
+  }
+
   h1 {
     font-family: var(--mono);
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 700;
     color: var(--accent);
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.75rem;
     letter-spacing: -0.03em;
   }
 
   .tagline {
     color: var(--muted);
-    margin: 0 0 1rem;
-  }
-
-  .cli-hint {
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    color: var(--muted);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 0.4rem 0.75rem;
-    margin: 0 0 1.5rem;
-    display: inline-block;
+    margin: 0 0 2rem;
+    font-size: 0.95rem;
   }
 
   .search {
     display: flex;
+    justify-content: center;
     gap: 0.5rem;
-    margin-bottom: 3rem;
   }
 
   .search input {
-    flex: 1;
-    max-width: 320px;
+    width: 100%;
+    max-width: 420px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 0.5rem 0.75rem;
+    padding: 0.65rem 1rem;
     font-family: var(--mono);
-    font-size: 1rem;
+    font-size: 1.1rem;
     color: var(--text);
     outline: none;
   }
@@ -120,8 +124,8 @@ const byNamespace = namespaces.map((ns) => ({
     color: #fff;
     border: none;
     border-radius: 4px;
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+    padding: 0.65rem 1.25rem;
+    font-size: 1rem;
     cursor: pointer;
   }
 
@@ -129,41 +133,17 @@ const byNamespace = namespaces.map((ns) => ({
     opacity: 0.85;
   }
 
-  .ns-section {
-    margin-bottom: 3rem;
-  }
-
-  .ns-header {
-    display: flex;
-    align-items: baseline;
-    gap: 0.75rem;
-    margin-bottom: 0.25rem;
-  }
-
-  h2 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0;
-  }
-
-  h2 a {
-    color: var(--text);
-  }
-
-  h2 a:hover {
-    color: var(--accent);
-    text-decoration: none;
-  }
-
-  .ns-count {
+  .section-heading {
     font-size: 0.8rem;
-    color: var(--muted);
-  }
-
-  .ns-desc {
-    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     color: var(--muted);
     margin: 0 0 1rem;
+  }
+
+  .highlights {
+    margin-bottom: 3rem;
   }
 
   .code-grid {
@@ -209,5 +189,53 @@ const byNamespace = namespaces.map((ns) => ({
     font-size: 0.8rem;
     color: var(--muted);
     margin-top: 0.1rem;
+  }
+
+  .namespaces {
+    margin-bottom: 2rem;
+  }
+
+  .ns-grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .ns-grid li {
+    background: var(--surface);
+  }
+
+  .ns-grid a {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.55rem 0.85rem;
+    gap: 0.5rem;
+    color: var(--text);
+  }
+
+  .ns-grid a:hover {
+    background: var(--border);
+    text-decoration: none;
+  }
+
+  .ns-grid a:hover .ns-title {
+    text-decoration: underline;
+  }
+
+  .ns-title {
+    font-size: 0.875rem;
+  }
+
+  .ns-count {
+    font-size: 0.75rem;
+    color: var(--muted);
+    white-space: nowrap;
   }
 </style>

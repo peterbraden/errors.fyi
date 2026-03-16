@@ -97,6 +97,16 @@ export async function getEntriesForNumeric(numeric: number): Promise<CodeEntry[]
   return all.filter((c) => c.numeric === numeric);
 }
 
+// Returns a random sample of n codes using a Fisher-Yates shuffle seeded at build time.
+export function getSample(codes: CodeEntry[], n: number): CodeEntry[] {
+  const arr = codes.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.slice(0, n);
+}
+
 // Returns every path that should be rendered: direct codes + numeric aliases
 // that don't already have a direct file.
 export async function getAllCodePaths(): Promise<Array<{ code: string; isAlias: boolean }>> {
