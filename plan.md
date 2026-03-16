@@ -74,6 +74,11 @@ astro.config.mjs      ← site: https://errors.fyi, output: static
 - [x] Enable GitHub Pages in repo settings (Settings → Pages → source:
       GitHub Actions).
 - [x] CLI publish via npm trusted publishing (OIDC) — no token required.
+- Improve homepage, Prominent search, cli instructions move to footer. We don't
+  need every error code listed, just some highlights.
+- Make a canonical error page, ie `/http/404` and link from the 404 page.
+- Investigate cookieless analytics - we want basic info like page views, but no
+  privacy impact.
 
 ## Known / Next
 

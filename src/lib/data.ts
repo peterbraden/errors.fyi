@@ -77,6 +77,10 @@ export async function getNamespaces(): Promise<NamespaceMeta[]> {
   return (await loadAll()).namespaces;
 }
 
+export async function getNamespace(namespace: string): Promise<{ meta: NamespaceMeta; codes: CodeEntry[] }> {
+  return readNamespaceDir(namespace);
+}
+
 export async function getAllCodes(): Promise<CodeEntry[]> {
   return (await loadAll()).codes;
 }

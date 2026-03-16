@@ -1,0 +1,145 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getNamespaces, getNamespace } from '../../lib/data';
+
+export async function getStaticPaths() {
+  const namespaces = await getNamespaces();
+  return namespaces.map((ns) => ({ params: { namespace: ns.namespace } }));
+}
+
+const { namespace } = Astro.params;
+const { meta, codes } = await getNamespace(namespace);
+---
+
+<Base title={meta.title} description={meta.description}>
+  <nav class="breadcrumb">
+    <a href="/">errors.fyi</a>
+    <span>/</span>
+    <span>{namespace}</span>
+  </nav>
+
+  <h1>{meta.title}</h1>
+  <p class="desc">{meta.description}</p>
+
+  {meta.references && meta.references.length > 0 && (
+    <div class="refs">
+      <h2>References</h2>
+      <ul>
+        {meta.references.map((ref) => (
+          <li><a href={ref} target="_blank" rel="noopener">{ref}</a></li>
+        ))}
+      </ul>
+    </div>
+  )}
+
+  <p class="count">{codes.length} codes</p>
+
+  <ul class="code-grid">
+    {codes.map((c) => (
+      <li>
+        <a href={`/${c.code}/`}>
+          <code>{c.code}</code>
+          <span>{c.name}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</Base>
+
+<style>
+  .breadcrumb {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+  }
+
+  .desc {
+    color: var(--muted);
+    margin: 0 0 1.5rem;
+    max-width: 640px;
+  }
+
+  .refs {
+    margin-bottom: 2rem;
+  }
+
+  .refs h2 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 0 0 0.4rem;
+  }
+
+  .refs ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .refs li {
+    font-size: 0.875rem;
+    word-break: break-all;
+  }
+
+  .count {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 0 0 1rem;
+  }
+
+  .code-grid {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .code-grid li {
+    background: var(--surface);
+  }
+
+  .code-grid a {
+    display: flex;
+    flex-direction: column;
+    padding: 0.6rem 0.85rem;
+    height: 100%;
+  }
+
+  .code-grid a:hover {
+    background: var(--border);
+    text-decoration: none;
+  }
+
+  .code-grid a:hover span {
+    text-decoration: underline;
+  }
+
+  .code-grid code {
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    color: var(--accent);
+    display: block;
+  }
+
+  .code-grid span {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.1rem;
+  }
+</style>

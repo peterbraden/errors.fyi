@@ -46,7 +46,7 @@ const byNamespace = namespaces.map((ns) => ({
   {byNamespace.map((ns) => (
     <section class="ns-section">
       <div class="ns-header">
-        <h2>{ns.title}</h2>
+        <h2><a href={`/ns/${ns.namespace}/`}>{ns.title}</a></h2>
         <span class="ns-count">{ns.codes.length} codes</span>
       </div>
       <p class="ns-desc">{ns.description}</p>
@@ -144,6 +144,15 @@ const byNamespace = namespaces.map((ns) => ({
     font-size: 1.1rem;
     font-weight: 600;
     margin: 0;
+  }
+
+  h2 a {
+    color: var(--text);
+  }
+
+  h2 a:hover {
+    color: var(--accent);
+    text-decoration: none;
   }
 
   .ns-count {
