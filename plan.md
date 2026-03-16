@@ -2,7 +2,7 @@
 
 A community-maintained directory of error codes (HTTP, POSIX, and beyond),
 statically generated from this repository. Anyone can open a pull request to
-add new codes; CI rebuilds and deploys on merge to `main`.
+add new codes; CI rebuilds and deploys on merge to `master`.
 
 ## Decisions
 
@@ -21,6 +21,12 @@ add new codes; CI rebuilds and deploys on merge to `main`.
   frontmatter field generate an alias page (e.g. `errors.fyi/2` → ENOENT).
 - **No per-namespace browse pages** for now — the homepage lists all codes
   grouped by namespace.
+- **JSON export:** the build emits `dist/data/codes.json` — a static snapshot
+  of all codes and namespace metadata, served from GitHub Pages. This is the
+  single source of truth for both the site and the CLI.
+- **CLI:** `cli/` is an npm package (`errors.fyi`, binary `errorfyi`) that
+  fetches the JSON export at runtime. No bundled data snapshot; always reflects
+  the latest deployment.
 
 ## Structure
 
@@ -37,8 +43,15 @@ src/
     index.astro       ← homepage: all codes grouped by namespace
     [code].astro      ← per-code page, aggregates across namespaces;
                          also renders numeric alias pages
-.github/workflows/deploy.yml  ← build + deploy on push to main
-astro.config.mjs              ← site: https://errors.fyi, output: static
+    data/
+      codes.json.ts   ← static JSON export of all codes
+cli/
+  package.json        ← npm package: errors.fyi, binary: errorfyi
+  bin/errorfyi.js     ← CLI: fetch, filter, pretty-print
+.github/workflows/
+  deploy.yml          ← build + deploy to GH Pages on push to master
+  publish-cli.yml     ← publish cli/ to npm on version tag (v*)
+astro.config.mjs      ← site: https://errors.fyi, output: static
 ```
 
 ## Tasks
@@ -48,46 +61,43 @@ astro.config.mjs              ← site: https://errors.fyi, output: static
 - [x] Set up GitHub Actions CI/CD for automatic build and deploy to GH Pages.
 - [x] Migrate data format from JSON to Markdown + frontmatter.
 - [x] Reroute URLs to `errors.fyi/<code>`; implement numeric alias pages.
+- [x] Fix numeric alias cross-reference: direct numeric pages now surface
+      symbolic codes whose `numeric` field matches (e.g. `/2/` lists ENOENT).
+- [x] Fix Astro style scoping: layout `<style>` changed to `<style is:global>`
+      so link colour applies to `<slot>` content from page components.
+- [x] Add namespaces: POSIX, curl, git, rsync, gRPC, HTTP/2, DNS, PostgreSQL,
+      MySQL, Node.js, systemd, OpenSSL, Windows errno, Python, SMTP, Docker,
+      AWS, SQLite, Kubernetes, Ruby, Java, MongoDB.
+- [x] Static JSON export: `errors.fyi/data/codes.json`.
+- [x] CLI tool: `errorfyi` (npm package `errors.fyi`).
+- [x] CI workflow to publish CLI to npm on version tag.
 - [ ] Enable GitHub Pages in repo settings (Settings → Pages → source:
       GitHub Actions). Must be done manually by the repo owner.
+- [ ] Set `NPM_TOKEN` secret in GitHub repository settings for CLI publish.
 
 ## Known / Next
 
-- POSIX error codes added (77 codes). Numeric values are `numeric` field where
-  consistent across Linux/macOS; platform-variable codes note both values in
-  the description instead.
 - No search yet — Pagefind is a good fit once content grows.
 - `src/pages/404.astro` is the GH Pages 404 handler. It uses
   `window.location.pathname` to show either the HTTP 404 entry (if the
   URL is exactly `/404`) or an unknown-code prompt with contribution
-  instructions. The "404" code is excluded from `[code].astro` to avoid
+  instructions. The `404` code is excluded from `[code].astro` to avoid
   a static/dynamic route conflict.
 - `npm audit` reports 3 vulnerabilities in the Astro dependency tree; none
   affect the static build output.
 
-## Future: CLI (`errors.fyi explain 404`)
+## Future
 
-Goal: a CLI that mirrors the website, installable via npm or a standalone binary.
-
-```
-$ errors.fyi explain 404
-404 — Not Found (HTTP)
-The server cannot find the requested resource. The URL may be wrong,
-or the resource may not exist.
-RFC 9110 §15.5.5
-```
-
-Key architectural consideration: the CLI must not bundle a data snapshot that
-goes stale. The cleanest approach is to have the Astro build emit a static JSON
-index (e.g. `public/data/codes.json`) alongside the HTML, which the CLI fetches
-at runtime. This means:
-
-- No separate API infrastructure — data is served from the same GitHub Pages
-  deployment and is always current.
-- The CLI is thin: fetch, filter, format. No local data management.
-- The build pipeline becomes the single source of truth for both the site and
-  the CLI.
-
-The invocation `errors.fyi` (with a dot) is unusual as a shell command but is
-valid. Worth verifying npm package name availability and checking whether a
-simpler alias (e.g. `errs`) is preferable for ergonomics.
+- **Search:** Pagefind integration once content stabilises.
+- **More namespaces:** PHP exceptions, Go standard library sentinels, Redis
+  RESP errors, OAuth/OIDC error codes, nginx/Apache status codes.
+- **Pipe-aware namespace detection:** when `errorfyi` receives piped input
+  (stdin is not a TTY), parse the text for known error patterns to infer both
+  the code and the namespace automatically. For example:
+  - `psql 2>&1 | errorfyi` → detect `SQLSTATE: 42601`, infer namespace `postgresql`
+  - `node script.js 2>&1 | errorfyi` → detect `ERR_MODULE_NOT_FOUND`, infer `nodejs`
+  - `python3 script.py 2>&1 | errorfyi` → detect `ValueError:`, infer `python`
+  Deferred: heuristic matching is useful but not essential; the `-n` flag is a
+  sufficient workaround for now.
+- **Per-namespace browse pages:** listing all codes within a namespace.
+- **Standalone binary:** pkg or similar for users who prefer not to install Node.
