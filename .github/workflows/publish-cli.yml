@@ -37,7 +37,7 @@ jobs:
       - name: Commit and push version bump
         run: |
           git add package.json
-          git commit -m "chore: bump cli to $(node -p "require('./package.json').version")"
+          git commit -m "chore: bump cli to $(node -p "require('./package.json').version") [skip ci]"
           git push
 
       - name: Publish
