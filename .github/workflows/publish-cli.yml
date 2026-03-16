@@ -43,10 +43,5 @@ jobs:
           git commit -m "chore: bump cli to $(node -p "require('./package.json').version") [skip ci]"
           git push
 
-      - name: Diagnostics
-        run: |
-          npm --version
-          npm config list
-
       - name: Publish
         run: npm publish
