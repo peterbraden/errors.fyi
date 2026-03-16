@@ -78,7 +78,9 @@ astro.config.mjs      ← site: https://errors.fyi, output: static
       24 random sample tiles, compact namespace grid replacing full listing.
 - [x] Namespace pill on code pages: single-entry pages show a linked namespace
       tag next to the code badge; multi-entry namespace labels are also linked.
-- Make a canonical error page, ie `/http/404` and link from the 404 page.
+- [x] Canonical namespace-qualified code pages at `/<namespace>/<code>/` (e.g.
+      `/http/404/`, `/postgresql/2BP01/`). Namespace browse pages link directly
+      to these; aggregation pages link each namespace label to its canonical URL.
 
 ## Known / Next
 
