@@ -19,8 +19,8 @@ add new codes; CI rebuilds and deploys on merge to `master`.
   context shown on the page, not part of the path. If two namespaces share a
   code value, both appear on the same page. Symbolic codes with a `numeric`
   frontmatter field generate an alias page (e.g. `errors.fyi/2` → ENOENT).
-- **No per-namespace browse pages** for now — the homepage lists all codes
-  grouped by namespace.
+- **Per-namespace browse pages** at `/ns/<namespace>/`. Homepage namespace
+  titles link to their browse page.
 - **JSON export:** the build emits `dist/data/codes.json` — a static snapshot
   of all codes and namespace metadata, served from GitHub Pages. This is the
   single source of truth for both the site and the CLI.
@@ -95,7 +95,8 @@ astro.config.mjs      ← site: https://errors.fyi, output: static
 
 - **Search:** Pagefind integration once content stabilises.
 - **More namespaces:** PHP exceptions, Go standard library sentinels, Redis
-  RESP errors, OAuth/OIDC error codes, nginx/Apache status codes.
+  RESP errors, OAuth/OIDC error codes, nginx/Apache status codes. ✓ Done.
+- **Per-namespace browse pages:** listing all codes within a namespace. ✓ Done.
 - **Pipe-aware namespace detection:** when `errorfyi` receives piped input
   (stdin is not a TTY), parse the text for known error patterns to infer both
   the code and the namespace automatically. For example:
