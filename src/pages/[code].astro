@@ -76,7 +76,7 @@ const description = isAlias
         {entries.map((entry) => (
           <section class="entry">
             {entries.length > 1 && (
-              <a href={`/ns/${entry.namespace}/`} class="entry-ns">{entry.namespace}</a>
+              <a href={`/${entry.namespace}/${entry.code}/`} class="entry-ns">{entry.namespace}</a>
             )}
             {entries.length > 1 && (
               <h2 class="entry-name">{entry.name}</h2>

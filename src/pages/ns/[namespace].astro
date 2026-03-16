@@ -37,7 +37,7 @@ const { meta, codes } = await getNamespace(namespace);
   <ul class="code-grid">
     {codes.map((c) => (
       <li>
-        <a href={`/${c.code}/`}>
+        <a href={`/${namespace}/${c.code}/`}>
           <code>{c.code}</code>
           <span>{c.name}</span>
         </a>
