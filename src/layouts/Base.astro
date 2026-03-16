@@ -15,7 +15,7 @@ const { title, description = 'A community directory of error codes.' } = Astro.p
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title} — errors.fyi</title>
-    <style>
+    <style is:global>
       *, *::before, *::after { box-sizing: border-box; }
 
       :root {
