@@ -50,7 +50,7 @@ cli/
   bin/errorfyi.js     ← CLI: fetch, filter, pretty-print
 .github/workflows/
   deploy.yml          ← build + deploy to GH Pages on push to master
-  publish-cli.yml     ← publish cli/ to npm on version tag (v*)
+  publish-cli.yml     ← publish cli/ to npm on changes to cli/
 astro.config.mjs      ← site: https://errors.fyi, output: static
 ```
 
@@ -70,10 +70,10 @@ astro.config.mjs      ← site: https://errors.fyi, output: static
       AWS, SQLite, Kubernetes, Ruby, Java, MongoDB.
 - [x] Static JSON export: `errors.fyi/data/codes.json`.
 - [x] CLI tool: `errorfyi` (npm package `errors.fyi`).
-- [x] CI workflow to publish CLI to npm on version tag.
-- [ ] Enable GitHub Pages in repo settings (Settings → Pages → source:
-      GitHub Actions). Must be done manually by the repo owner.
-- [ ] Set `NPM_TOKEN` secret in GitHub repository settings for CLI publish.
+- [x] CI workflow to publish CLI to npm on changes to `cli/`.
+- [x] Enable GitHub Pages in repo settings (Settings → Pages → source:
+      GitHub Actions).
+- [x] CLI publish via npm trusted publishing (OIDC) — no token required.
 
 ## Known / Next
 
