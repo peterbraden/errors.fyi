@@ -40,5 +40,13 @@ jobs:
           git commit -m "chore: bump cli to $(node -p "require('./package.json').version") [skip ci]"
           git push
 
+      - name: Debug OIDC claims (npm audience)
+        run: |
+          RESP=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm%3Aregistry.npmjs.org")
+          TOKEN=$(echo "$RESP" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).value))")
+          PAYLOAD=$(echo "$TOKEN" | cut -d. -f2 | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const b=d.trim().replace(/-/g,'+').replace(/_/g,'/');console.log(Buffer.from(b,'base64').toString('utf8'))})")
+          echo "$PAYLOAD" | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const p=JSON.parse(d);console.log(JSON.stringify({sub:p.sub,repository:p.repository,repository_owner:p.repository_owner,job_workflow_ref:p.job_workflow_ref,environment:p.environment},null,2))})"
+
       - name: Publish
         run: npm publish --provenance --access public
