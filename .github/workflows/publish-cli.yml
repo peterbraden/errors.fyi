@@ -2,8 +2,9 @@ name: Publish CLI to npm
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [master]
+    paths:
+      - 'cli/**'
 
 jobs:
   publish:
@@ -22,12 +23,17 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
-      - name: Verify package version matches tag
+      - name: Check if version is already published
+        id: version-check
         run: |
-          PKG_VERSION="v$(node -p "require('./package.json').version")"
-          if [ "$PKG_VERSION" != "${{ github.ref_name }}" ]; then
-            echo "Tag ${{ github.ref_name }} does not match package version $PKG_VERSION"
-            exit 1
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if npm view "errors.fyi@${PKG_VERSION}" version 2>/dev/null | grep -q "${PKG_VERSION}"; then
+            echo "Version ${PKG_VERSION} already published — skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - run: npm publish --provenance --access public
+      - name: Publish
+        if: steps.version-check.outputs.skip == 'false'
+        run: npm publish --provenance --access public
