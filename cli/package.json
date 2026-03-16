@@ -16,7 +16,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/peterbraden/errors.fyi"
+    "url": "git+https://github.com/peterbraden/errors.fyi.git"
   },
   "keywords": [
     "errors",
