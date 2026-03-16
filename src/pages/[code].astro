@@ -17,6 +17,14 @@ const entries = isAlias
   ? await getEntriesForNumeric(parseInt(code, 10))
   : await getEntriesForCode(code);
 
+// For direct pages where the code is a pure integer, surface any symbolic codes
+// whose `numeric` field equals this value. These are suppressed from having their
+// own alias page (because this direct page exists), so without this they would be
+// invisible from the numeric code's perspective.
+const parsedNumeric = parseInt(code, 10);
+const isDirectNumeric = !isAlias && !isNaN(parsedNumeric) && String(parsedNumeric) === code;
+const numericRefs = isDirectNumeric ? await getEntriesForNumeric(parsedNumeric) : [];
+
 const title = isAlias ? `${code} (numeric alias)` : `${code}`;
 const description = isAlias
   ? `The numeric value ${code} refers to other error codes.`
@@ -88,6 +96,23 @@ const description = isAlias
         ))}
       </div>
     </>
+  )}
+
+  {numericRefs.length > 0 && (
+    <section class="numeric-refs">
+      <h2 class="numeric-refs-heading">Symbolic codes with this numeric value</h2>
+      <ul class="alias-list">
+        {numericRefs.map((e) => (
+          <li>
+            <a href={`/${e.code}/`}>
+              <span class="alias-code">{e.code}</span>
+              <span class="alias-name">{e.name}</span>
+              <span class="alias-ns">{e.namespace}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
   )}
 
   <div class="back">
@@ -224,6 +249,21 @@ const description = isAlias
   .entry-refs li {
     font-size: 0.875rem;
     word-break: break-all;
+  }
+
+  .numeric-refs {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .numeric-refs-heading {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+    font-weight: 600;
   }
 
   .back {
