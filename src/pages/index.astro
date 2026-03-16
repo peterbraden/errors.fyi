@@ -19,6 +19,8 @@ const byNamespace = namespaces.map((ns) => ({
     <a href="https://github.com/peterbraden/errors.fyi" target="_blank" rel="noopener">pull request</a>.
   </p>
 
+  <pre class="cli-hint">npm install -g errors-fyi &amp;&amp; errorfyi ENOENT</pre>
+
   <form class="search" id="search">
     <input
       type="text"
@@ -75,7 +77,19 @@ const byNamespace = namespaces.map((ns) => ({
 
   .tagline {
     color: var(--muted);
+    margin: 0 0 1rem;
+  }
+
+  .cli-hint {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.4rem 0.75rem;
     margin: 0 0 1.5rem;
+    display: inline-block;
   }
 
   .search {

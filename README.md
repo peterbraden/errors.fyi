@@ -103,7 +103,8 @@ cli/
 
 ## Licence
 
-Data contributed to this repository is released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+Site code is released under the [MIT Licence](LICENSE). Data contributed to
+this repository is released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
 
 ## Note about this project.
 
