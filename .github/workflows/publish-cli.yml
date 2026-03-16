@@ -40,5 +40,11 @@ jobs:
           git commit -m "chore: bump cli to $(node -p "require('./package.json').version") [skip ci]"
           git push
 
+      - name: Debug OIDC token claims
+        run: |
+          TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sigstore" | node -e "process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).value))")
+          echo "$TOKEN" | cut -d. -f2 | base64 -d 2>/dev/null | node -e "process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const p=JSON.parse(Buffer.from(d,'base64').toString('utf8') || d);console.log(JSON.stringify({repository:p.repository,repository_owner:p.repository_owner,workflow:p.workflow,job_workflow_ref:p.job_workflow_ref,sub:p.sub},null,2))})" || true
+
       - name: Publish
         run: npm publish --provenance --access public
