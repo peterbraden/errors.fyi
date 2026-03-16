@@ -1,5 +1,6 @@
 # errors-fyi
 
+
 Look up error codes from the command line. Data is fetched live from
 [errors.fyi](https://errors.fyi) — a community-maintained directory covering
 HTTP, POSIX, PostgreSQL, MySQL, Node.js, Python, AWS, Kubernetes, and more.
