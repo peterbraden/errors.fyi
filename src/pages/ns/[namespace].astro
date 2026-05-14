@@ -1,6 +1,8 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { getNamespaces, getNamespace } from '../../lib/data';
+import type { CodeEntry } from '../../lib/data';
+import { getHue } from '../../lib/namespace-hues';
 
 export async function getStaticPaths() {
   const namespaces = await getNamespaces();
@@ -9,137 +11,108 @@ export async function getStaticPaths() {
 
 const { namespace } = Astro.params;
 const { meta, codes } = await getNamespace(namespace);
+const hue = getHue(namespace);
+
+type CodeGroup = { mark: string; title: string; items: CodeEntry[] };
+
+function groupCodes(ns: string, codes: CodeEntry[]): CodeGroup[] {
+  if (['http', 'http2', 'http3'].includes(ns) || codes.every((c) => /^\d{3}$/.test(c.code))) {
+    const buckets: Record<number, CodeEntry[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+    for (const c of codes) {
+      const k = Math.floor(parseInt(c.code, 10) / 100);
+      if (buckets[k]) buckets[k].push(c);
+    }
+    const titles: Record<number, string> = {
+      1: 'Informational',
+      2: 'Success',
+      3: 'Redirection',
+      4: 'Client error',
+      5: 'Server error',
+    };
+    return (Object.entries(buckets) as [string, CodeEntry[]][])
+      .filter(([, arr]) => arr.length > 0)
+      .map(([k, arr]) => ({ mark: k + 'xx', title: titles[parseInt(k)], items: arr }));
+  }
+  if (codes.length > 8 && codes.every((c) => /^E[A-Z]+$/.test(c.code))) {
+    const buckets: Record<string, CodeEntry[]> = {};
+    for (const c of codes) {
+      const k = c.code[1];
+      (buckets[k] = buckets[k] || []).push(c);
+    }
+    return Object.keys(buckets)
+      .sort()
+      .map((k) => ({
+        mark: 'E' + k + '·',
+        title: 'E' + k + '…',
+        items: buckets[k],
+      }));
+  }
+  return [{ mark: '·', title: 'All codes', items: codes.slice() }];
+}
+
+function shortenRef(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.host.replace(/^www\./, '') + (u.pathname === '/' ? '' : u.pathname);
+  } catch {
+    return url;
+  }
+}
+
+const groups = groupCodes(namespace, codes);
+const statusPath = `errors.fyi/ns/${namespace}`;
 ---
 
-<Base title={meta.title} description={meta.description}>
-  <nav class="breadcrumb">
+<Base title={meta.title} description={meta.description} hue={hue} path={statusPath}>
+  <nav class="crumb">
     <a href="/">errors.fyi</a>
-    <span>/</span>
-    <span>{namespace}</span>
+    <span class="sep">/</span>
+    <span>ns</span>
+    <span class="sep">/</span>
+    <span class="current">{namespace}</span>
   </nav>
 
-  <h1>{meta.title}</h1>
-  <p class="desc">{meta.description}</p>
+  <section class="ns-hero">
+    <div>
+      <div class="ns-tag">{namespace}</div>
+      <h1>{meta.title}</h1>
+      <p class="ns-desc">{meta.description}</p>
+    </div>
+    <div class="ns-stats">
+      <span class="big">{codes.length}</span>
+      <span class="lbl">codes</span>
+    </div>
+  </section>
 
   {meta.references && meta.references.length > 0 && (
-    <div class="refs">
-      <h2>References</h2>
-      <ul>
-        {meta.references.map((ref) => (
-          <li><a href={ref} target="_blank" rel="noopener">{ref}</a></li>
-        ))}
-      </ul>
+    <div class="ns-refs">
+      <span class="label">references</span>
+      {meta.references.map((ref) => (
+        <a href={ref} target="_blank" rel="noopener">{shortenRef(ref)}</a>
+      ))}
     </div>
   )}
 
-  <p class="count">{codes.length} codes</p>
-
-  <ul class="code-grid">
-    {codes.map((c) => (
-      <li>
-        <a href={`/${namespace}/${c.code}/`}>
-          <code>{c.code}</code>
-          <span>{c.name}</span>
-        </a>
-      </li>
-    ))}
-  </ul>
+  {groups.map((group) => (
+    <div class="classgroup">
+      <div class="classgroup-head">
+        <span class="cmark">{group.mark}</span>
+        <span class="ctitle">{group.title}</span>
+        <span class="ccount">{group.items.length} codes</span>
+      </div>
+      <ul class="code-list">
+        {group.items.map((c) => (
+          <li>
+            <a href={`/${c.code}/`}>
+              <span class="lc">{c.code}</span>
+              <span class="ln">
+                {c.name}
+                {c.description && <span class="desc">{c.description}</span>}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))}
 </Base>
-
-<style>
-  .breadcrumb {
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-bottom: 1.5rem;
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-  }
-
-  h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin: 0 0 0.5rem;
-  }
-
-  .desc {
-    color: var(--muted);
-    margin: 0 0 1.5rem;
-    max-width: 640px;
-  }
-
-  .refs {
-    margin-bottom: 2rem;
-  }
-
-  .refs h2 {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    font-weight: 600;
-    margin: 0 0 0.4rem;
-  }
-
-  .refs ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .refs li {
-    font-size: 0.875rem;
-    word-break: break-all;
-  }
-
-  .count {
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin: 0 0 1rem;
-  }
-
-  .code-grid {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-
-  .code-grid li {
-    background: var(--surface);
-  }
-
-  .code-grid a {
-    display: flex;
-    flex-direction: column;
-    padding: 0.6rem 0.85rem;
-    height: 100%;
-  }
-
-  .code-grid a:hover {
-    background: var(--border);
-    text-decoration: none;
-  }
-
-  .code-grid a:hover span {
-    text-decoration: underline;
-  }
-
-  .code-grid code {
-    font-family: var(--mono);
-    font-size: 0.9rem;
-    color: var(--accent);
-    display: block;
-  }
-
-  .code-grid span {
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin-top: 0.1rem;
-  }
-</style>

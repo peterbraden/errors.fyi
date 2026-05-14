@@ -1,68 +1,154 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getEntriesForCode } from '../lib/data';
+import { getCachedNamespace } from '../lib/ns-cache';
+import { getHue } from '../lib/namespace-hues';
 
-// Pre-load the HTTP 404 entry so we can inline it for the /404 URL case.
-const http404 = (await getEntriesForCode('404'))[0];
+const http404entries = await getEntriesForCode('404');
+const http404 = http404entries[0];
+const http404hue = http404 ? getHue(http404.namespace) : 220;
+
+let prevCode = null;
+let nextCode = null;
+let nearby: typeof http404entries = [];
+
+if (http404) {
+  const { codes: nsCodes } = await getCachedNamespace(http404.namespace);
+  const idx = nsCodes.findIndex((c) => c.code === http404.code);
+  prevCode = idx > 0 ? nsCodes[idx - 1] : null;
+  nextCode = idx >= 0 && idx < nsCodes.length - 1 ? nsCodes[idx + 1] : null;
+  const nearbyStart = Math.max(0, idx - 5);
+  const nearbyEnd = Math.min(nsCodes.length, idx + 6);
+  nearby = nsCodes.slice(nearbyStart, nearbyEnd);
+}
+
+function shortenRef(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.host.replace(/^www\./, '') + (u.pathname === '/' ? '' : u.pathname);
+  } catch {
+    return url;
+  }
+}
 ---
 
-<Base title="Error Code" description="Error code lookup and unknown code reference.">
-  <nav class="breadcrumb">
-    <a href="/">errors.fyi</a>
-    <span>/</span>
-    <span id="breadcrumb-code">404</span>
-  </nav>
-
-  <!-- Shown when the URL is exactly /404 -->
+<Base title="Error Code" description="Error code lookup and unknown code reference." hue={http404hue} path="errors.fyi/404">
+  <!-- Panel: shown when URL is exactly /404 (the real HTTP 404 entry) -->
   <div id="panel-code" hidden>
-    <div class="code-badge">404</div>
-    <h1>{http404.name}</h1>
-    <div class="entries">
-      <section class="entry">
-        <p class="entry-desc">{http404.description}</p>
-        {http404.references && http404.references.length > 0 && (
-          <div class="entry-refs">
-            <h3>References</h3>
-            <ul>
-              {http404.references.map((ref) => (
-                <li><a href={ref} target="_blank" rel="noopener">{ref}</a></li>
-              ))}
-            </ul>
+    <nav class="crumb">
+      <a href="/">errors.fyi</a>
+      <span class="sep">/</span>
+      {http404 && <a href={`/ns/${http404.namespace}/`}>{http404.namespace}</a>}
+      <span class="sep">/</span>
+      <span class="current">404</span>
+    </nav>
+
+    {http404 && (
+      <div class="code-page">
+        <div class="code-main">
+          <section class="code-hero">
+            <div class="pretag">{http404.namespace} · {http404.namespace}/404</div>
+            <div class="codebadge"><span class="accent">404</span></div>
+            <h1>{http404.name}</h1>
+            {http404.description && <p class="lede">{http404.description}</p>}
+          </section>
+
+          {http404.references && http404.references.length > 0 && (
+            <section class="code-section">
+              <h2>References</h2>
+              <ul class="refs-list">
+                {http404.references.map((ref) => (
+                  <li><a href={ref} target="_blank" rel="noopener">{shortenRef(ref)}</a></li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {(prevCode || nextCode) && (
+            <section class="code-section">
+              <h2>In this namespace</h2>
+              <div class="siblings">
+                {prevCode ? (
+                  <a href={`/${prevCode.code}/`} class="prev">
+                    <span class="dir">← previous</span>
+                    <span class="sc">{prevCode.code}</span>
+                    <span class="sn">{prevCode.name}</span>
+                  </a>
+                ) : (
+                  <div style="padding:1rem;color:var(--muted-2);font-family:var(--mono);font-size:12px">— start of namespace —</div>
+                )}
+                {nextCode ? (
+                  <a href={`/${nextCode.code}/`} class="next">
+                    <span class="dir">next →</span>
+                    <span class="sc">{nextCode.code}</span>
+                    <span class="sn">{nextCode.name}</span>
+                  </a>
+                ) : (
+                  <div style="padding:1rem;color:var(--muted-2);font-family:var(--mono);font-size:12px;text-align:right">— end of namespace —</div>
+                )}
+              </div>
+              {nearby.length > 0 && (
+                <div class="nearby">
+                  {nearby.map((c) => (
+                    <a href={`/${c.code}/`} class={c.code === '404' ? 'is-current' : ''}>{c.code}</a>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+
+        <aside class="code-aside">
+          <div>
+            <h4>Metadata</h4>
+            <div class="kv">
+              <div class="row">
+                <span class="k">Namespace</span>
+                <span class="v"><a href={`/ns/${http404.namespace}/`}>{http404.namespace}</a></span>
+              </div>
+              <div class="row">
+                <span class="k">Code</span>
+                <span class="v">404</span>
+              </div>
+              <div class="row">
+                <span class="k">Name</span>
+                <span class="v">{http404.name}</span>
+              </div>
+              <div class="row">
+                <span class="k">Refs</span>
+                <span class="v">{http404.references?.length ?? 0}</span>
+              </div>
+            </div>
           </div>
-        )}
-      </section>
-    </div>
+          <div>
+            <h4>CLI</h4>
+            <div class="cli-panel">
+              <span class="cli-sigil">$</span> errorfyi&nbsp;404
+            </div>
+          </div>
+        </aside>
+      </div>
+    )}
   </div>
 
-  <!-- Shown for any other missing URL -->
+  <!-- Panel: shown for any unknown URL -->
   <div id="panel-unknown" hidden>
-    <div class="code-badge muted">?</div>
-    <h1>Unknown error code</h1>
-    <p>
-      This code is not yet in the directory. If you know what it means,
-      please <a href="https://github.com/peterbraden/errors.fyi" target="_blank" rel="noopener">open a pull request</a>
-      to add it.
-    </p>
-    <div class="contribute">
-      <h2>How to contribute</h2>
-      <p>
-        Create a file at <code>data/&lt;namespace&gt;/&lt;code&gt;.md</code> with the following frontmatter:
-      </p>
-      <pre><code>---
-name: Short name for the error
-description: "One or two sentences describing what the error means."
-references:
-  - https://link-to-specification
----</code></pre>
-      <p>
-        See <a href="https://github.com/peterbraden/errors.fyi/blob/main/data/README.md" target="_blank" rel="noopener">data/README.md</a>
-        for the full schema, then open a pull request against <code>main</code>.
-      </p>
-    </div>
-  </div>
+    <nav class="crumb">
+      <a href="/">errors.fyi</a>
+      <span class="sep">/</span>
+      <span class="current" id="unknown-code">404</span>
+    </nav>
 
-  <div class="back">
-    <a href="/">← browse all codes</a>
+    <section class="code-hero">
+      <div class="pretag">unknown code</div>
+      <div class="codebadge"><span class="accent">404</span></div>
+      <h1 id="unknown-heading">No entry for this code</h1>
+      <p class="lede">This code is not in the directory. If it's a real error code, consider opening a pull request to add it.</p>
+    </section>
+
+    <div style="margin-top:2rem">
+      <a href="/" class="linklike">← back to errors.fyi</a>
+    </div>
   </div>
 </Base>
 
@@ -70,116 +156,31 @@ references:
   const path = window.location.pathname.replace(/\/$/, '');
   const code = path.split('/').filter(Boolean).pop() ?? '';
 
-  document.getElementById('breadcrumb-code')!.textContent = code || '404';
-
   if (path === '/404' || path === '') {
     document.getElementById('panel-code')!.removeAttribute('hidden');
+    document.documentElement.style.setProperty('--hue', String(Number(document.documentElement.style.getPropertyValue('--hue') || 220)));
   } else {
     document.getElementById('panel-unknown')!.removeAttribute('hidden');
+    document.documentElement.style.setProperty('--hue', '15');
+    const heading = document.getElementById('unknown-heading');
+    const codeEl = document.getElementById('unknown-code');
+    if (heading) heading.textContent = `No entry for "${code}"`;
+    if (codeEl) codeEl.textContent = code || '404';
   }
 </script>
 
 <style>
-  .breadcrumb {
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-bottom: 1.5rem;
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-  }
-
-  .code-badge {
-    font-family: var(--mono);
-    font-size: 3.5rem;
-    font-weight: 700;
-    color: var(--accent);
-    line-height: 1;
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.03em;
-  }
-
-  .code-badge.muted { color: var(--muted); }
-
-  h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0 0 1.25rem;
-  }
-
-  /* Entry section */
-  .entries { display: flex; flex-direction: column; gap: 2rem; }
-
-  .entry {
-    border-left: 2px solid var(--accent);
-    padding-left: 1.25rem;
-  }
-
-  .entry-desc {
-    font-size: 1.05rem;
-    line-height: 1.7;
-    max-width: 640px;
-    margin: 0 0 0.75rem;
-  }
-
-  .entry-refs h3 {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    margin: 0 0 0.4rem;
-  }
-
-  .entry-refs ul { list-style: none; padding: 0; margin: 0; }
-  .entry-refs li { font-size: 0.875rem; word-break: break-all; }
-
-  /* Unknown panel */
-  #panel-unknown p {
-    color: var(--muted);
-    max-width: 540px;
-    margin: 0 0 1.5rem;
-  }
-
-  .contribute {
-    margin-top: 2rem;
-    padding: 1.5rem;
+  .cli-panel {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 6px;
-    max-width: 560px;
-  }
-
-  .contribute h2 {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin: 0 0 0.75rem;
-  }
-
-  .contribute p {
-    font-size: 0.875rem;
-    color: var(--muted);
-    margin: 0 0 0.75rem;
-  }
-
-  pre {
-    background: var(--bg);
-    border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 1rem;
-    overflow-x: auto;
-    margin: 0 0 0.75rem;
-  }
-
-  pre code {
+    padding: 0.6rem 0.7rem;
+    color: var(--text-2);
     font-family: var(--mono);
-    font-size: 0.8rem;
-    color: var(--text);
+    font-size: 12px;
+    line-height: 1.4;
   }
-
-  .back {
-    margin-top: 2.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
-    font-size: 0.875rem;
+  .cli-sigil {
+    color: var(--muted-2);
   }
 </style>

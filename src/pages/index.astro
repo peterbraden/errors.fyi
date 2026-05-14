@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getNamespaces, getAllCodes, getSample } from '../lib/data';
+import { getHue } from '../lib/namespace-hues';
 
 const namespaces = await getNamespaces();
 const allCodes = await getAllCodes();
@@ -15,59 +16,70 @@ const namespaceCounts = new Map(
 const highlights = getSample(allCodes, 24);
 ---
 
-<Base title="Error Code Reference">
+<Base title="Error Code Reference" hue={25} path="errors.fyi">
   <section class="hero">
-    <h1>errors.fyi</h1>
-    <p class="tagline">
-      A community directory of error codes. Each code has a canonical page — contribute via
-      <a href="https://github.com/peterbraden/errors.fyi" target="_blank" rel="noopener">pull request</a>.
+    <div class="hero-wordmark">
+      errors<span class="dot"></span><span class="fyi">fyi</span>
+    </div>
+    <p class="hero-tagline">
+      A community directory of error codes. Every code —
+      <span class="accent">404</span>,
+      <span class="accent">ENOENT</span>,
+      <span class="accent">23505</span>
+      — has a canonical page. Contributed and maintained on GitHub.
     </p>
 
-    <form class="search" id="search">
+    <form class="search" id="search-form">
+      <span class="prefix">›</span>
       <input
         type="text"
         name="code"
-        placeholder="404, ENOENT, …"
+        placeholder="Look up a code…  ENOENT · 404 · 23505 · ERR_MODULE_NOT_FOUND"
         autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
         spellcheck="false"
         aria-label="Error code"
       />
-      <button type="submit">Look up</button>
+      <button type="submit">Look up ↵</button>
     </form>
 
-    <script>
-      document.getElementById('search')!.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const code = (e.target as HTMLFormElement).code.value.trim();
-        if (code) window.location.href = `/${code}/`;
-      });
-    </script>
+    <div class="search-hints">
+      <span class="label">try</span>
+      {['404', 'ENOENT', 'ECONNREFUSED', '23505', 'ERR_MODULE_NOT_FOUND', 'NXDOMAIN'].map((c) => (
+        <a href={`/${c}/`}>{c}</a>
+      ))}
+    </div>
   </section>
 
-  <section class="highlights">
-    <h2 class="section-heading">From the directory</h2>
-    <ul class="code-grid">
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">From the directory</h2>
+      <span class="section-meta">random sample · {highlights.length} / {allCodes.length.toLocaleString()}</span>
+    </div>
+    <ul class="sample-grid">
       {highlights.map((c) => (
         <li>
-          <a href={`/${c.code}/`}>
-            <code>{c.code}</code>
-            <span>{c.name}</span>
+          <a href={`/${c.code}/`} style={`--hue: ${getHue(c.namespace)}`}>
+            <span class="stag">{c.namespace}</span>
+            <span class="scode">{c.code}</span>
+            <span class="sname">{c.name}</span>
           </a>
         </li>
       ))}
     </ul>
   </section>
 
-  <section class="namespaces">
-    <h2 class="section-heading">Namespaces</h2>
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Namespaces</h2>
+      <span class="section-meta">{namespaces.length} total · {allCodes.length.toLocaleString()} codes</span>
+    </div>
     <ul class="ns-grid">
       {namespaces.map((ns) => (
         <li>
-          <a href={`/ns/${ns.namespace}/`}>
-            <span class="ns-title">{ns.title}</span>
-            <span class="ns-count">{namespaceCounts.get(ns.namespace)} codes</span>
+          <a href={`/ns/${ns.namespace}/`} style={`--hue: ${getHue(ns.namespace)}`}>
+            <span class="swatch"></span>
+            <span class="nsname">{ns.namespace}</span>
+            <span class="nscount">{namespaceCounts.get(ns.namespace)}</span>
           </a>
         </li>
       ))}
@@ -75,167 +87,10 @@ const highlights = getSample(allCodes, 24);
   </section>
 </Base>
 
-<style>
-  .hero {
-    padding: 2rem 0 3rem;
-    text-align: center;
-  }
-
-  h1 {
-    font-family: var(--mono);
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: var(--accent);
-    margin: 0 0 0.75rem;
-    letter-spacing: -0.03em;
-  }
-
-  .tagline {
-    color: var(--muted);
-    margin: 0 0 2rem;
-    font-size: 0.95rem;
-  }
-
-  .search {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-
-  .search input {
-    width: 100%;
-    max-width: 420px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 0.65rem 1rem;
-    font-family: var(--mono);
-    font-size: 1.1rem;
-    color: var(--text);
-    outline: none;
-  }
-
-  .search input:focus {
-    border-color: var(--accent);
-  }
-
-  .search button {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    padding: 0.65rem 1.25rem;
-    font-size: 1rem;
-    cursor: pointer;
-  }
-
-  .search button:hover {
-    opacity: 0.85;
-  }
-
-  .section-heading {
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    margin: 0 0 1rem;
-  }
-
-  .highlights {
-    margin-bottom: 3rem;
-  }
-
-  .code-grid {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-
-  .code-grid li {
-    background: var(--surface);
-  }
-
-  .code-grid a {
-    display: flex;
-    flex-direction: column;
-    padding: 0.6rem 0.85rem;
-    height: 100%;
-  }
-
-  .code-grid a:hover {
-    background: var(--border);
-    text-decoration: none;
-  }
-
-  .code-grid a:hover span {
-    text-decoration: underline;
-  }
-
-  .code-grid code {
-    font-family: var(--mono);
-    font-size: 0.9rem;
-    color: var(--accent);
-    display: block;
-  }
-
-  .code-grid span {
-    font-size: 0.8rem;
-    color: var(--muted);
-    margin-top: 0.1rem;
-  }
-
-  .namespaces {
-    margin-bottom: 2rem;
-  }
-
-  .ns-grid {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-
-  .ns-grid li {
-    background: var(--surface);
-  }
-
-  .ns-grid a {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding: 0.55rem 0.85rem;
-    gap: 0.5rem;
-    color: var(--text);
-  }
-
-  .ns-grid a:hover {
-    background: var(--border);
-    text-decoration: none;
-  }
-
-  .ns-grid a:hover .ns-title {
-    text-decoration: underline;
-  }
-
-  .ns-title {
-    font-size: 0.875rem;
-  }
-
-  .ns-count {
-    font-size: 0.75rem;
-    color: var(--muted);
-    white-space: nowrap;
-  }
-</style>
+<script>
+  document.getElementById('search-form')!.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const code = (e.target as HTMLFormElement).code.value.trim();
+    if (code) window.location.href = `/${code}/`;
+  });
+</script>
