@@ -1,6 +1,8 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { getAllCodes, getNamespace } from '../../lib/data';
+import { getAllCodes } from '../../lib/data';
+import { getCachedNamespace } from '../../lib/ns-cache';
+import { getHue } from '../../lib/namespace-hues';
 
 export async function getStaticPaths() {
   const codes = await getAllCodes();
@@ -10,141 +12,157 @@ export async function getStaticPaths() {
 }
 
 const { namespace, code } = Astro.params;
-const { meta, codes } = await getNamespace(namespace);
+const { meta, codes } = await getCachedNamespace(namespace);
 const entry = codes.find((c) => c.code === code);
 
 if (!entry) throw new Error(`Code ${code} not found in namespace ${namespace}`);
 
-const description = entry.description;
+const hue = getHue(namespace);
+
+const idx = codes.findIndex((c) => c.code === code);
+const prevCode = idx > 0 ? codes[idx - 1] : null;
+const nextCode = idx >= 0 && idx < codes.length - 1 ? codes[idx + 1] : null;
+const nearbyStart = Math.max(0, idx - 5);
+const nearbyEnd = Math.min(codes.length, idx + 6);
+const nearby = codes.slice(nearbyStart, nearbyEnd);
+
+function formatBadge(code: string): string {
+  if (/^\d+$/.test(code)) {
+    return `<span class="accent">${code}</span>`;
+  }
+  const m = code.match(/^([A-Z]+_|E)(.+)$/);
+  if (m) {
+    return `<span style="color:var(--muted-2)">${m[1]}</span><span class="accent">${m[2]}</span>`;
+  }
+  return `<span class="accent">${code}</span>`;
+}
+
+function shortenRef(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.host.replace(/^www\./, '') + (u.pathname === '/' ? '' : u.pathname);
+  } catch {
+    return url;
+  }
+}
+
+const refs = entry.references ?? [];
+const statusPath = `errors.fyi/${namespace}/${code}`;
 ---
 
-<Base title={`${code} — ${meta.title}`} description={description}>
-  <nav class="breadcrumb">
+<Base title={`${code} — ${meta.title}`} description={entry.description} hue={hue} path={statusPath}>
+  <nav class="crumb">
     <a href="/">errors.fyi</a>
-    <span>/</span>
+    <span class="sep">/</span>
     <a href={`/ns/${namespace}/`}>{namespace}</a>
-    <span>/</span>
-    <span>{code}</span>
+    <span class="sep">/</span>
+    <span class="current">{code}</span>
   </nav>
 
-  <div class="code-header">
-    <div class="code-badge">{code}</div>
-    <a href={`/ns/${namespace}/`} class="ns-tag">{namespace}</a>
-  </div>
+  <div class="code-page">
+    <div class="code-main">
+      <section class="code-hero">
+        <div class="pretag">{meta.title} · {namespace}/{code}</div>
+        <div class="codebadge" set:html={formatBadge(code)} />
+        <h1>{entry.name}</h1>
+        {entry.description && <p class="lede">{entry.description}</p>}
+      </section>
 
-  <h1>{entry.name}</h1>
+      {refs.length > 0 && (
+        <section class="code-section">
+          <h2>References</h2>
+          <ul class="refs-list">
+            {refs.map((ref) => (
+              <li><a href={ref} target="_blank" rel="noopener">{shortenRef(ref)}</a></li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-  <p class="entry-desc">{entry.description}</p>
-
-  {entry.numeric !== undefined && (
-    <p class="entry-numeric">
-      Numeric value: <a href={`/${entry.numeric}/`}><code>{entry.numeric}</code></a>
-    </p>
-  )}
-
-  {entry.references && entry.references.length > 0 && (
-    <div class="entry-refs">
-      <h2>References</h2>
-      <ul>
-        {entry.references.map((ref) => (
-          <li><a href={ref} target="_blank" rel="noopener">{ref}</a></li>
-        ))}
-      </ul>
+      {(prevCode || nextCode) && (
+        <section class="code-section">
+          <h2>In this namespace</h2>
+          <div class="siblings">
+            {prevCode ? (
+              <a href={`/${prevCode.code}/`} class="prev">
+                <span class="dir">← previous</span>
+                <span class="sc">{prevCode.code}</span>
+                <span class="sn">{prevCode.name}</span>
+              </a>
+            ) : (
+              <div style="padding:1rem;color:var(--muted-2);font-family:var(--mono);font-size:12px">— start of namespace —</div>
+            )}
+            {nextCode ? (
+              <a href={`/${nextCode.code}/`} class="next">
+                <span class="dir">next →</span>
+                <span class="sc">{nextCode.code}</span>
+                <span class="sn">{nextCode.name}</span>
+              </a>
+            ) : (
+              <div style="padding:1rem;color:var(--muted-2);font-family:var(--mono);font-size:12px;text-align:right">— end of namespace —</div>
+            )}
+          </div>
+          {nearby.length > 0 && (
+            <div class="nearby">
+              {nearby.map((c) => (
+                <a href={`/${c.code}/`} class={c.code === code ? 'is-current' : ''}>{c.code}</a>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
-  )}
 
-  <div class="back">
-    <a href={`/${code}/`}>← all namespaces for {code}</a>
+    <aside class="code-aside">
+      <div>
+        <h4>Metadata</h4>
+        <div class="kv">
+          <div class="row">
+            <span class="k">Namespace</span>
+            <span class="v"><a href={`/ns/${namespace}/`}>{namespace}</a></span>
+          </div>
+          <div class="row">
+            <span class="k">Code</span>
+            <span class="v">{code}</span>
+          </div>
+          <div class="row">
+            <span class="k">Name</span>
+            <span class="v">{entry.name}</span>
+          </div>
+          {entry.numeric !== undefined && (
+            <div class="row">
+              <span class="k">Numeric</span>
+              <span class="v"><a href={`/${entry.numeric}/`}>{entry.numeric}</a></span>
+            </div>
+          )}
+          <div class="row">
+            <span class="k">Refs</span>
+            <span class="v">{refs.length}</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h4>CLI</h4>
+        <div class="cli-panel">
+          <span class="cli-sigil">$</span> errorfyi&nbsp;{code}
+        </div>
+      </div>
+    </aside>
   </div>
 </Base>
 
 <style>
-  .breadcrumb {
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-bottom: 1.5rem;
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-  }
-
-  .code-header {
-    display: flex;
-    align-items: baseline;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .code-badge {
-    font-family: var(--mono);
-    font-size: 3.5rem;
-    font-weight: 700;
-    color: var(--accent);
-    line-height: 1;
-    letter-spacing: -0.03em;
-  }
-
-  .ns-tag {
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    color: var(--muted);
+  .cli-panel {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 0.2rem 0.55rem;
-    text-decoration: none;
-    white-space: nowrap;
+    padding: 0.6rem 0.7rem;
+    color: var(--text-2);
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.4;
   }
-
-  .ns-tag:hover {
-    color: var(--text);
-    border-color: var(--muted);
-    text-decoration: none;
-  }
-
-  h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0 0 1.5rem;
-  }
-
-  .entry-desc {
-    font-size: 1.05rem;
-    line-height: 1.7;
-    max-width: 640px;
-    margin: 0 0 0.75rem;
-  }
-
-  .entry-numeric {
-    font-size: 0.875rem;
-    color: var(--muted);
-    margin: 0 0 0.75rem;
-  }
-
-  .entry-refs h2 {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    margin: 0 0 0.4rem;
-    font-weight: 600;
-  }
-
-  .entry-refs ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .entry-refs li {
-    font-size: 0.875rem;
-    word-break: break-all;
-  }
-
-  .back {
-    margin-top: 2.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
-    font-size: 0.875rem;
+  .cli-sigil {
+    color: var(--muted-2);
   }
 </style>

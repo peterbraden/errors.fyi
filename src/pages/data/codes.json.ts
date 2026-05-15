@@ -2,7 +2,8 @@ import type { APIRoute } from 'astro';
 import { getAllCodes, getNamespaces } from '../../lib/data';
 
 export const GET: APIRoute = async () => {
-  const [codes, namespaces] = await Promise.all([getAllCodes(), getNamespaces()]);
+  const namespaces = await getNamespaces();
+  const codes = await getAllCodes();
 
   const payload = {
     generated: new Date().toISOString(),

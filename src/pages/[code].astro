@@ -1,10 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getAllCodePaths, getEntriesForCode, getEntriesForNumeric } from '../lib/data';
+import { getCachedNamespace } from '../lib/ns-cache';
+import { getHue } from '../lib/namespace-hues';
 
 export async function getStaticPaths() {
   const paths = await getAllCodePaths();
-  // '404' is handled by src/pages/404.astro (doubles as the GH Pages 404 handler).
   return paths
     .filter(({ code }) => code !== '404')
     .map(({ code, isAlias }) => ({ params: { code }, props: { isAlias } }));
@@ -17,295 +18,232 @@ const entries = isAlias
   ? await getEntriesForNumeric(parseInt(code, 10))
   : await getEntriesForCode(code);
 
-// For direct pages where the code is a pure integer, surface any symbolic codes
-// whose `numeric` field equals this value. These are suppressed from having their
-// own alias page (because this direct page exists), so without this they would be
-// invisible from the numeric code's perspective.
-const parsedNumeric = parseInt(code, 10);
-const isDirectNumeric = !isAlias && !isNaN(parsedNumeric) && String(parsedNumeric) === code;
-const numericRefs = isDirectNumeric ? await getEntriesForNumeric(parsedNumeric) : [];
+const primary = entries[0];
+const hue = primary ? getHue(primary.namespace) : 25;
 
-const title = isAlias ? `${code} (numeric alias)` : `${code}`;
-const description = isAlias
+let prevCode: (typeof entries)[0] | null = null;
+let nextCode: (typeof entries)[0] | null = null;
+let nearby: typeof entries = [];
+
+if (!isAlias && primary) {
+  const { codes: nsCodes } = await getCachedNamespace(primary.namespace);
+  const idx = nsCodes.findIndex((c) => c.code === primary.code);
+  prevCode = idx > 0 ? nsCodes[idx - 1] : null;
+  nextCode = idx >= 0 && idx < nsCodes.length - 1 ? nsCodes[idx + 1] : null;
+  const nearbyStart = Math.max(0, idx - 5);
+  const nearbyEnd = Math.min(nsCodes.length, idx + 6);
+  nearby = nsCodes.slice(nearbyStart, nearbyEnd);
+}
+
+function formatBadge(code: string): string {
+  if (/^\d+$/.test(code)) {
+    return `<span class="accent">${code}</span>`;
+  }
+  const m = code.match(/^([A-Z]+_|E)(.+)$/);
+  if (m) {
+    return `<span style="color:var(--muted-2)">${m[1]}</span><span class="accent">${m[2]}</span>`;
+  }
+  return `<span class="accent">${code}</span>`;
+}
+
+function shortenRef(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.host.replace(/^www\./, '') + (u.pathname === '/' ? '' : u.pathname);
+  } catch {
+    return url;
+  }
+}
+
+const pageTitle = isAlias ? `${code} (numeric alias)` : primary ? primary.code : code;
+const pageDescription = isAlias
   ? `The numeric value ${code} refers to other error codes.`
-  : entries.map((e) => e.description).join(' ');
+  : (primary?.description ?? '');
+
+const statusPath = primary
+  ? `errors.fyi/${primary.namespace}/${primary.code}`
+  : `errors.fyi/${code}`;
+
+const refs = primary?.references ?? [];
+const otherEntries = entries.slice(1);
 ---
 
-<Base title={title} description={description}>
-  <nav class="breadcrumb">
-    <a href="/">errors.fyi</a>
-    <span>/</span>
-    <span>{code}</span>
-  </nav>
-
-  <div class="code-header">
-    <div class="code-badge">{code}</div>
-    {!isAlias && entries.length === 1 && (
-      <a href={`/ns/${entries[0].namespace}/`} class="ns-tag">{entries[0].namespace}</a>
-    )}
-  </div>
-
+<Base title={pageTitle} description={pageDescription} hue={hue} path={statusPath}>
   {isAlias ? (
     <>
-      <h1>Numeric alias</h1>
-      <p class="alias-note">
-        The numeric value <code>{code}</code> does not have its own canonical page.
-        It refers to the following:
-      </p>
-      <ul class="alias-list">
+      <nav class="crumb">
+        <a href="/">errors.fyi</a>
+        <span class="sep">/</span>
+        <span class="current">{code}</span>
+      </nav>
+
+      <section class="code-hero">
+        <div class="pretag">numeric alias · refers to {entries.length} code{entries.length === 1 ? '' : 's'}</div>
+        <div class="codebadge" set:html={`<span class="accent">${code}</span>`} />
+        <h1>Numeric alias</h1>
+        <p class="lede">The numeric value {code} doesn't have its own canonical entry — it's defined symbolically:</p>
+      </section>
+
+      <ul class="code-list">
         {entries.map((e) => (
           <li>
-            <a href={`/${e.code}/`}>
-              <span class="alias-code">{e.code}</span>
-              <span class="alias-name">{e.name}</span>
-              <span class="alias-ns">{e.namespace}</span>
+            <a href={`/${e.code}/`} style={`--hue: ${getHue(e.namespace)}`}>
+              <span class="lc">{e.code}</span>
+              <span class="ln">
+                {e.name}
+                {e.description && <span class="desc">{e.description}</span>}
+              </span>
             </a>
           </li>
         ))}
       </ul>
     </>
-  ) : (
+  ) : primary ? (
     <>
-      {entries.length === 1 ? (
-        <h1>{entries[0].name}</h1>
-      ) : (
-        <h1>{code}</h1>
-      )}
+      <nav class="crumb">
+        <a href="/">errors.fyi</a>
+        <span class="sep">/</span>
+        <a href={`/ns/${primary.namespace}/`}>{primary.namespace}</a>
+        <span class="sep">/</span>
+        <span class="current">{primary.code}</span>
+      </nav>
 
-      <div class="entries">
-        {entries.map((entry) => (
-          <section class="entry">
-            {entries.length > 1 && (
-              <a href={`/${entry.namespace}/${entry.code}/`} class="entry-ns">{entry.namespace}</a>
-            )}
-            {entries.length > 1 && (
-              <h2 class="entry-name">{entry.name}</h2>
-            )}
-            <p class="entry-desc">{entry.description}</p>
-            {entry.numeric !== undefined && (
-              <p class="entry-numeric">
-                Numeric value: <a href={`/${entry.numeric}/`}><code>{entry.numeric}</code></a>
-              </p>
-            )}
-            {entry.references && entry.references.length > 0 && (
-              <div class="entry-refs">
-                <h3>References</h3>
-                <ul>
-                  {entry.references.map((ref) => (
-                    <li><a href={ref} target="_blank" rel="noopener">{ref}</a></li>
-                  ))}
-                </ul>
-              </div>
-            )}
+      <div class="code-page">
+        <div class="code-main">
+          <section class="code-hero">
+            <div class="pretag">{primary.namespace} · {primary.namespace}/{primary.code}</div>
+            <div class="codebadge" set:html={formatBadge(primary.code)} />
+            <h1>{primary.name}</h1>
+            {primary.description && <p class="lede">{primary.description}</p>}
           </section>
-        ))}
+
+          {otherEntries.length > 0 && (
+            <section class="code-section">
+              <h2>Also defined in</h2>
+              <ul class="code-list">
+                {otherEntries.map((e) => (
+                  <li>
+                    <a href={`/ns/${e.namespace}/`} style={`--hue: ${getHue(e.namespace)}`}>
+                      <span class="lc">{e.namespace}</span>
+                      <span class="ln">
+                        {e.name}
+                        {e.description && <span class="desc">{e.description}</span>}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {refs.length > 0 && (
+            <section class="code-section">
+              <h2>References</h2>
+              <ul class="refs-list">
+                {refs.map((ref) => (
+                  <li><a href={ref} target="_blank" rel="noopener">{shortenRef(ref)}</a></li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {(prevCode || nextCode) && (
+            <section class="code-section">
+              <h2>In this namespace</h2>
+              <div class="siblings">
+                {prevCode ? (
+                  <a href={`/${prevCode.code}/`} class="prev">
+                    <span class="dir">← previous</span>
+                    <span class="sc">{prevCode.code}</span>
+                    <span class="sn">{prevCode.name}</span>
+                  </a>
+                ) : (
+                  <div class="sibling-placeholder">— start of namespace —</div>
+                )}
+                {nextCode ? (
+                  <a href={`/${nextCode.code}/`} class="next">
+                    <span class="dir">next →</span>
+                    <span class="sc">{nextCode.code}</span>
+                    <span class="sn">{nextCode.name}</span>
+                  </a>
+                ) : (
+                  <div class="sibling-placeholder sibling-placeholder-end">— end of namespace —</div>
+                )}
+              </div>
+              {nearby.length > 0 && (
+                <div class="nearby">
+                  {nearby.map((c) => (
+                    <a href={`/${c.code}/`} class={c.code === primary.code ? 'is-current' : ''}>
+                      {c.code}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+
+        <aside class="code-aside">
+          <div>
+            <h4>Metadata</h4>
+            <div class="kv">
+              <div class="row">
+                <span class="k">Namespace</span>
+                <span class="v"><a href={`/ns/${primary.namespace}/`}>{primary.namespace}</a></span>
+              </div>
+              <div class="row">
+                <span class="k">Code</span>
+                <span class="v">{primary.code}</span>
+              </div>
+              <div class="row">
+                <span class="k">Name</span>
+                <span class="v">{primary.name}</span>
+              </div>
+              {primary.numeric !== undefined && (
+                <div class="row">
+                  <span class="k">Numeric</span>
+                  <span class="v"><a href={`/${primary.numeric}/`}>{primary.numeric}</a></span>
+                </div>
+              )}
+              <div class="row">
+                <span class="k">Refs</span>
+                <span class="v">{refs.length}</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h4>CLI</h4>
+            <div class="cli-panel">
+              <span class="cli-sigil">$</span> errorfyi&nbsp;{primary.code}
+            </div>
+          </div>
+        </aside>
       </div>
     </>
-  )}
-
-  {numericRefs.length > 0 && (
-    <section class="numeric-refs">
-      <h2 class="numeric-refs-heading">Symbolic codes with this numeric value</h2>
-      <ul class="alias-list">
-        {numericRefs.map((e) => (
-          <li>
-            <a href={`/${e.code}/`}>
-              <span class="alias-code">{e.code}</span>
-              <span class="alias-name">{e.name}</span>
-              <span class="alias-ns">{e.namespace}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )}
-
-  <div class="back">
-    <a href="/">← all namespaces</a>
-  </div>
+  ) : null}
 </Base>
 
 <style>
-  .breadcrumb {
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-bottom: 1.5rem;
-    display: flex;
-    gap: 0.4rem;
-    align-items: center;
-  }
-
-  .code-header {
-    display: flex;
-    align-items: baseline;
-    gap: 1rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .code-badge {
+  .sibling-placeholder {
+    padding: 1rem 1.1rem;
+    color: var(--muted-2);
     font-family: var(--mono);
-    font-size: 3.5rem;
-    font-weight: 700;
-    color: var(--accent);
-    line-height: 1;
-    letter-spacing: -0.03em;
+    font-size: 12px;
   }
-
-  .ns-tag {
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    color: var(--muted);
+  .sibling-placeholder-end {
+    text-align: right;
+  }
+  .cli-panel {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 0.2rem 0.55rem;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .ns-tag:hover {
-    color: var(--text);
-    border-color: var(--muted);
-    text-decoration: none;
-  }
-
-  h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0 0 1.5rem;
-  }
-
-  /* Alias page */
-  .alias-note {
-    color: var(--muted);
-    margin: 0 0 1rem;
-  }
-
-  .alias-list {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-
-  .alias-list li {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-  }
-
-  .alias-list a {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
-  }
-
-  .alias-list a:hover { text-decoration: none; background: var(--border); border-radius: 4px; }
-
-  .alias-code {
+    padding: 0.6rem 0.7rem;
+    color: var(--text-2);
     font-family: var(--mono);
-    color: var(--accent);
-    font-size: 0.95rem;
-    min-width: 5rem;
+    font-size: 12px;
+    line-height: 1.4;
   }
-
-  .alias-name { font-weight: 500; }
-
-  .alias-ns {
-    margin-left: auto;
-    font-size: 0.8rem;
-    color: var(--muted);
-    font-family: var(--mono);
-  }
-
-  /* Entry sections (when multiple namespaces share a code) */
-  .entries {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  .entry {
-    border-left: 2px solid var(--accent);
-    padding-left: 1.25rem;
-  }
-
-  .entry-ns {
-    display: inline-block;
-    font-family: var(--mono);
-    font-size: 0.8rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 0.25rem;
-    text-decoration: none;
-  }
-
-  .entry-ns:hover {
-    color: var(--text);
-    text-decoration: none;
-  }
-
-  .entry-name {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0 0 0.75rem;
-  }
-
-  .entry-desc {
-    font-size: 1.05rem;
-    line-height: 1.7;
-    max-width: 640px;
-    margin: 0 0 0.75rem;
-  }
-
-  .entry-numeric {
-    font-size: 0.875rem;
-    color: var(--muted);
-    margin: 0 0 0.75rem;
-  }
-
-  .entry-refs h3 {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    margin: 0 0 0.4rem;
-  }
-
-  .entry-refs ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .entry-refs li {
-    font-size: 0.875rem;
-    word-break: break-all;
-  }
-
-  .numeric-refs {
-    margin-top: 2.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
-  }
-
-  .numeric-refs-heading {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--muted);
-    margin: 0 0 0.75rem;
-    font-weight: 600;
-  }
-
-  .back {
-    margin-top: 2.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
-    font-size: 0.875rem;
+  .cli-sigil {
+    color: var(--muted-2);
   }
 </style>
