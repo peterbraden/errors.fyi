@@ -1,4 +1,5 @@
 export const NAMESPACE_HUES: Record<string, number> = {
+  anthropic: 25,
   aws: 35,
   bluetooth: 215,
   cassandra: 195,
