@@ -27,6 +27,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   modbus: 45,
   mongodb: 135,
   mqtt: 195,
+  mssql: 355,
   mysql: 215,
   neo4j: 200,
   nfs: 30,
