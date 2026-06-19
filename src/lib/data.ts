@@ -62,15 +62,25 @@ async function readNamespaceDir(namespace: string): Promise<{ meta: NamespaceMet
   return { meta, codes };
 }
 
-async function loadAll(): Promise<{ namespaces: NamespaceMeta[]; codes: CodeEntry[] }> {
-  const entries = await readdir(DATA_DIR, { withFileTypes: true });
-  const dirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+let allDataPromise: Promise<{ namespaces: NamespaceMeta[]; codes: CodeEntry[] }> | undefined;
 
-  const results = await Promise.all(dirs.map((ns) => readNamespaceDir(ns)));
-  return {
-    namespaces: results.map((r) => r.meta).sort((a, b) => a.title.localeCompare(b.title)),
-    codes: results.flatMap((r) => r.codes),
-  };
+// Reads and parses every namespace under data/. The result is memoized for
+// the lifetime of the process, since data/ is immutable during a build and
+// this would otherwise be re-read from disk for every single page rendered.
+function loadAll(): Promise<{ namespaces: NamespaceMeta[]; codes: CodeEntry[] }> {
+  if (!allDataPromise) {
+    allDataPromise = (async () => {
+      const entries = await readdir(DATA_DIR, { withFileTypes: true });
+      const dirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+
+      const results = await Promise.all(dirs.map((ns) => readNamespaceDir(ns)));
+      return {
+        namespaces: results.map((r) => r.meta).sort((a, b) => a.title.localeCompare(b.title)),
+        codes: results.flatMap((r) => r.codes),
+      };
+    })();
+  }
+  return allDataPromise;
 }
 
 export async function getNamespaces(): Promise<NamespaceMeta[]> {
