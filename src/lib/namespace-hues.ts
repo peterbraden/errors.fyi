@@ -37,6 +37,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   nodejs: 130,
   oauth: 320,
   openssl: 15,
+  paypal: 228,
   php: 260,
   posix: 145,
   postgresql: 240,
