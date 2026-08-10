@@ -56,6 +56,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   snmp: 175,
   sqlite: 50,
   ssh: 220,
+  stun: 100,
   swift: 25,
   systemd: 210,
   terraform: 265,
