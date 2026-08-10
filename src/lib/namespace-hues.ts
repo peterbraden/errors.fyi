@@ -40,6 +40,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   oauth: 320,
   okta: 155,
   openssl: 15,
+  paypal: 228,
   php: 260,
   posix: 145,
   postgresql: 240,
