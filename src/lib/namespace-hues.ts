@@ -44,6 +44,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   php: 260,
   posix: 145,
   postgresql: 240,
+  pyjwt: 310,
   python: 70,
   rabbitmq: 255,
   redis: 5,
