@@ -66,6 +66,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   systemd: 210,
   terraform: 265,
   tls: 180,
+  twitter: 203,
   typescript: 220,
   vercel: 340,
   vim: 80,
