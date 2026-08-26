@@ -11,6 +11,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   dns: 175,
   docker: 205,
   erlang: 350,
+  facebook: 225,
   ftp: 80,
   gcp: 230,
   git: 18,
