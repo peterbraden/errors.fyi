@@ -58,6 +58,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   sip: 280,
   smtp: 200,
   snmp: 175,
+  solidity: 275,
   sqlite: 50,
   square: 8,
   ssh: 220,
