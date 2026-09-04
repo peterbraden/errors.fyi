@@ -74,6 +74,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   websocket: 240,
   windows: 210,
   'windows-errno': 15,
+  winsock: 245,
   xmpp: 295,
 };
 
