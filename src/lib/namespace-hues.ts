@@ -70,6 +70,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   typescript: 220,
   vercel: 340,
   vim: 80,
+  vulkan: 125,
   webdav: 205,
   websocket: 240,
   windows: 210,
