@@ -6,6 +6,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   bluetooth: 215,
   cassandra: 195,
   clickhouse: 50,
+  coap: 90,
   curl: 0,
   discord: 235,
   dns: 175,
