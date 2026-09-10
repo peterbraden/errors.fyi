@@ -10,6 +10,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   discord: 235,
   dns: 175,
   docker: 205,
+  elixir: 245,
   erlang: 350,
   ftp: 80,
   gcp: 230,
