@@ -8,6 +8,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   clickhouse: 50,
   coap: 90,
   curl: 0,
+  digitalocean: 190,
   discord: 235,
   dns: 175,
   docker: 205,
