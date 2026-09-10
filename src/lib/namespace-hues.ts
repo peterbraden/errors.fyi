@@ -77,6 +77,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   vim: 80,
   vulkan: 125,
   webdav: 205,
+  webdriver: 330,
   websocket: 240,
   windows: 210,
   'windows-errno': 15,
