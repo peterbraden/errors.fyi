@@ -33,6 +33,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   kerberos: 290,
   kubernetes: 218,
   ldap: 95,
+  macos: 12,
   memcached: 115,
   modbus: 45,
   mongodb: 135,
