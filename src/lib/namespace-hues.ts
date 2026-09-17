@@ -30,6 +30,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   icmp: 165,
   imap: 285,
   java: 25,
+  javascript: 50,
   kafka: 5,
   kerberos: 290,
   kubernetes: 218,
