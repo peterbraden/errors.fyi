@@ -19,6 +19,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   ftp: 80,
   gcp: 230,
   git: 18,
+  github: 245,
   gitlab: 24,
   go: 188,
   graphql: 305,
