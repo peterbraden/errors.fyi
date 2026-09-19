@@ -21,6 +21,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   git: 18,
   gitlab: 24,
   go: 188,
+  godot: 205,
   graphql: 305,
   grpc: 270,
   hresult: 210,
