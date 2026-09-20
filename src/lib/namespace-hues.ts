@@ -16,6 +16,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   elixir: 245,
   erlang: 350,
   facebook: 225,
+  flask: 65,
   ftp: 80,
   gcp: 230,
   git: 18,
