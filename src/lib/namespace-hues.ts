@@ -79,6 +79,7 @@ export const NAMESPACE_HUES: Record<string, number> = {
   stun: 100,
   supabase: 300,
   swift: 25,
+  sysexits: 40,
   systemd: 210,
   terraform: 265,
   thrift: 85,
